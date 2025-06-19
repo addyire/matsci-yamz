@@ -1,0 +1,21 @@
+{
+  "name": "@yamz/db",
+  "type": "module",
+  "scripts": {},
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.44.1",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@yamz/typescript-config": "workspace:*",
+    "drizzle-kit": "^0.31.1",
+    "eslint": "^9",
+    "tsx": "^4.19.4",
+    "typescript": "latest"
+  }
+}
