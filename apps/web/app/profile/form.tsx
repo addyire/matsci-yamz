@@ -13,10 +13,9 @@ import {
 import type { User } from "@yamz/db";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
-import { submitProfile } from "./actions";
 import { Button } from "@/components/ui/button";
 import { EditProfile, EditProfileSchema } from "@/lib/schemas/profile";
+import { trpc } from "@/trpc/client";
 
 export const EditProfileForm = ({ defaults }: { defaults: User }) => {
   const form = useForm<EditProfile>({
@@ -24,19 +23,16 @@ export const EditProfileForm = ({ defaults }: { defaults: User }) => {
     defaultValues: defaults,
   });
 
-  const [isPending, startTransition] = useTransition();
-
-  const onSubmit = (values: EditProfile) => {
-    startTransition(() => {
-      submitProfile(values);
-    });
-  };
+  const { mutate, isPending } = trpc.user.edit.useMutation();
 
   return (
     <Card>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit((data) => mutate(data))}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -68,7 +64,7 @@ export const EditProfileForm = ({ defaults }: { defaults: User }) => {
               )}
             />
             <Button type="submit" disabled={isPending} className="w-full">
-              {isPending ? "Submitting..." : "Submit"}
+              {isPending ? "Saving..." : "Save"}
             </Button>
           </form>
         </Form>

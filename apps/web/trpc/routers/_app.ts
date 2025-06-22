@@ -1,14 +1,22 @@
 import { z } from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
-import { db, commentsTable, termsTable, usersTable, votesTable } from "@yamz/db";
+import {
+  db,
+  commentsTable,
+  termsTable,
+  usersTable,
+  votesTable,
+} from "@yamz/db";
 import { eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
 import { revalidatePath } from "next/cache";
 import { DefineTermSchema } from "@/lib/schemas/terms";
 import { tagsRouter } from "./tags";
+import { userRouter } from "./user";
 
 export const appRouter = createTRPCRouter({
   tags: tagsRouter,
+  user: userRouter,
   terms: {
     create: authenticatedProcedure
       .input(DefineTermSchema)
@@ -73,10 +81,10 @@ export const appRouter = createTRPCRouter({
             // if the user is logged in, try to find the users vote for this term
             ...(session.id
               ? {
-                userVote: sql<
-                  "up" | "down" | null
-                >`MAX(CASE WHEN ${votesTable.userId} = ${session.id} THEN ${votesTable.kind} ELSE NULL END)`,
-              }
+                  userVote: sql<
+                    "up" | "down" | null
+                  >`MAX(CASE WHEN ${votesTable.userId} = ${session.id} THEN ${votesTable.kind} ELSE NULL END)`,
+                }
               : {}),
           })
           .from(votesTable)
