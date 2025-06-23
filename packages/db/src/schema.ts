@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   integer,
   varchar,
@@ -18,6 +19,12 @@ export const usersTable = pgTable("users", {
   notifications: boolean().default(false),
 });
 
+export const usersTableRelations = relations(usersTable, ({one, many}) => ({
+  terms: many(termsTable),
+  comments: many(commentsTable),
+  votes: many(votesTable)
+}))
+
 export type Term = typeof termsTable.$inferSelect;
 export const termsTable = pgTable("terms", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -32,6 +39,12 @@ export const termsTable = pgTable("terms", {
   definition: text().notNull(),
   examples: text().notNull(),
 });
+
+export const termsTableRelations = relations(termsTable, ({one, many}) => ({
+  author: one(usersTable, {fields: [termsTable.authorId], references: [usersTable.id]}),
+  comments: many(commentsTable),
+  votes: many(votesTable)
+}))
 
 export const voteTypeEnum = pgEnum("vote_type", ["up", "down"]);
 
@@ -50,6 +63,11 @@ export const votesTable = pgTable(
   (table) => [primaryKey({ columns: [table.termId, table.userId] })],
 );
 
+export const votesTableRelations = relations(votesTable, ({one, many}) => ({
+  author: one(usersTable, {fields: [votesTable.userId], references: [usersTable.id]}),
+  term: one(termsTable, {fields: [votesTable.termId], references: [termsTable.id]}),
+}))
+
 export type Comment = typeof commentsTable.$inferSelect;
 export const commentsTable = pgTable("comments", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -61,6 +79,11 @@ export const commentsTable = pgTable("comments", {
     .notNull(),
   message: text().notNull(),
 });
+
+export const commentsTableRelations = relations(commentsTable, ({one, many}) => ({
+  author: one(usersTable, {fields: [commentsTable.userId], references: [usersTable.id]}),
+  term: one(termsTable, {fields: [commentsTable.termId], references: [termsTable.id]}),
+}))
 
 export type Tag = typeof tagsTable.$inferSelect;
 export const tagsTable = pgTable("tags", {
