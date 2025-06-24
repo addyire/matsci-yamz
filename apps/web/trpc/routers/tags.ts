@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
 import { authenticatedProcedure } from "../procedures";
-import { db, tagsTable, tagsToTerms, termsTable } from "@yamz/db";
+import {
+  db,
+  definitionsTable,
+  tagsTable,
+  tagsToTerms,
+  termsTable,
+} from "@yamz/db";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
@@ -20,12 +26,12 @@ export const tagsRouter = createTRPCRouter({
       return tag;
     }),
   get: baseProcedure
-    .input(z.object({ termId: z.number() }))
-    .query(async ({ input: { termId } }) => {
+    .input(z.object({ definitionId: z.number() }))
+    .query(async ({ input: { definitionId } }) => {
       return await db
         .select(getTableColumns(tagsTable))
         .from(tagsToTerms)
-        .where(eq(tagsToTerms.termId, termId))
+        .where(eq(tagsToTerms.definitionId, definitionId))
         .innerJoin(tagsTable, eq(tagsToTerms.tagId, tagsTable.id));
     }),
   // toggles a tag on a given term
@@ -33,53 +39,56 @@ export const tagsRouter = createTRPCRouter({
     .input(
       z.object({
         tagId: z.number(),
-        termId: z.number(),
+        definitionId: z.number(),
       }),
     )
-    .mutation(async ({ ctx: { userId }, input: { termId, tagId } }) => {
+    .mutation(async ({ ctx: { userId }, input: { definitionId, tagId } }) => {
       // find the term, and the relation if it exists
-      const [term] = await db
+      const [definition] = await db
         .select({
-          authorId: termsTable.authorId,
-          exists: tagsToTerms.termId,
+          authorId: definitionsTable.authorId,
+          exists: tagsToTerms.definitionId,
         })
-        .from(termsTable)
+        .from(definitionsTable)
         .leftJoin(
           tagsToTerms,
           and(
-            eq(termsTable.id, tagsToTerms.termId),
+            eq(termsTable.id, tagsToTerms.definitionId),
             eq(tagsToTerms.tagId, tagId),
           ),
         )
-        .where(eq(termsTable.id, termId))
+        .where(eq(definitionsTable.id, definitionId))
         .limit(1);
 
       // if the term doesn't exist, throw an error
-      if (!term)
+      if (!definition)
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "This term doesn't exist",
         });
 
       // if the user isn't the author, throw an error
-      if (term.authorId != userId)
+      if (definition.authorId != userId)
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You are not the owner of this term",
         });
 
-      if (term.exists)
+      if (definition.exists)
         // relation exists - delete it
         await db
           .delete(tagsToTerms)
           .where(
-            and(eq(tagsToTerms.termId, termId), eq(tagsToTerms.tagId, tagId)),
+            and(
+              eq(tagsToTerms.definitionId, definitionId),
+              eq(tagsToTerms.tagId, tagId),
+            ),
           );
       else
         // relation doesn't exist - insert
         await db
           .insert(tagsToTerms)
-          .values({ termId, tagId })
+          .values({ definitionId, tagId })
           .onConflictDoNothing();
 
       return { ok: true };

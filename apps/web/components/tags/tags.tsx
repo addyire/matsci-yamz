@@ -5,15 +5,15 @@ import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 
 interface Props {
-  termId: number;
+  definitionId: number;
 }
 
 export const TermTagsFallback = () => {
   return <Skeleton className="w-6 h-4" />;
 };
 
-export const TermTags = ({ termId }: Props) => {
-  const [tags] = trpc.tags.get.useSuspenseQuery({ termId });
+export const TermTags = ({ definitionId }: Props) => {
+  const [tags] = trpc.tags.get.useSuspenseQuery({ definitionId });
 
   return tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>);
 };

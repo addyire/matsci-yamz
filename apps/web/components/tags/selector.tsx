@@ -15,15 +15,15 @@ import {
 import { useState } from "react";
 
 interface Props {
-  termId: number;
+  definitionId: number;
 }
 
-export const EditTags = ({ termId }: Props) => {
+export const EditTags = ({ definitionId }: Props) => {
   const utils = trpc.useUtils();
   const [open, setOpen] = useState(false);
 
   // Query the tags that are already selected
-  const [selectedTags] = trpc.tags.get.useSuspenseQuery({ termId });
+  const [selectedTags] = trpc.tags.get.useSuspenseQuery({ definitionId });
 
   // Query to fetch all tags
   const { data: availableTags } = trpc.tags.getAll.useQuery(undefined, {
@@ -32,16 +32,16 @@ export const EditTags = ({ termId }: Props) => {
 
   // Mutation to toggle a tag
   const { mutate: toggleTag } = trpc.tags.toggle.useMutation({
-    onMutate: ({ termId, tagId }) => {
+    onMutate: ({ definitionId, tagId }) => {
       // get the old selected tags data
-      const old = utils.tags.get.getData({ termId });
+      const old = utils.tags.get.getData({ definitionId });
       if (!old) return;
 
       // check if we will be removing or adding the tag
       const isRemovingTag = old?.some((t) => t.id === tagId);
       if (isRemovingTag)
         // optimistically filter out this tag from the selected tags
-        return utils.tags.get.setData({ termId }, () =>
+        return utils.tags.get.setData({ definitionId }, () =>
           old.filter((t) => t.id !== tagId),
         );
 
@@ -51,10 +51,10 @@ export const EditTags = ({ termId }: Props) => {
       if (!tag) return;
 
       // add it to the selected tags
-      utils.tags.get.setData({ termId }, () => [...old, tag]);
+      utils.tags.get.setData({ definitionId }, () => [...old, tag]);
     },
     // if mutation throws error, refetch to get the actual state
-    onError: () => utils.tags.get.refetch({ termId }),
+    onError: () => utils.tags.get.refetch({ definitionId: definitionId }),
   });
 
   return (
@@ -73,7 +73,7 @@ export const EditTags = ({ termId }: Props) => {
               <CommandItem
                 key={tag.id}
                 value={tag.name}
-                onSelect={() => toggleTag({ termId, tagId: tag.id })}
+                onSelect={() => toggleTag({ definitionId, tagId: tag.id })}
               >
                 <CheckIcon
                   className={

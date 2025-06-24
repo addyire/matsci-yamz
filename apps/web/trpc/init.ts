@@ -20,4 +20,10 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-export const baseProcedure = t.procedure;
+export const baseProcedure = t.procedure.use((opts) => {
+  return opts.next({
+    ctx: {
+      userId: opts.ctx.session.id,
+    },
+  });
+});
