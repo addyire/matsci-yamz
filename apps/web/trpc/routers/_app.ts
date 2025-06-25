@@ -107,6 +107,24 @@ export const appRouter = createTRPCRouter({
 
         return result;
       }),
+    list: baseProcedure.query(async () => {
+      return await db
+        .select({
+          term: termsTable.term,
+          id: termsTable.id,
+          count: sql<number>`cast(count(*) as int)`,
+        })
+        .from(definitionsTable)
+        .leftJoin(termsTable, eq(termsTable.id, definitionsTable.termId))
+        .groupBy(termsTable.term, termsTable.id);
+    }),
+    get: baseProcedure
+      .input(z.object({ termId: z.number() }))
+      .query(async ({ input: { termId } }) => {
+        return db.query.termsTable.findFirst({
+          where: eq(termsTable.id, termId),
+        });
+      }),
   },
   comments: {
     get: baseProcedure.input(z.number()).query(async ({ input: id }) => {
@@ -146,9 +164,56 @@ export const appRouter = createTRPCRouter({
           vote: z.enum(["up", "down"]),
         }),
       )
-      .mutation(
-        async ({ ctx: { userId }, input: { definitionId, vote } }) => {},
-      ),
+      .mutation(async ({ ctx: { userId }, input: { definitionId, vote } }) => {
+        const [updatedDefinition] = await db.transaction(async (tx) => {
+          const constraint = and(
+            eq(votesTable.userId, userId),
+            eq(votesTable.definitionId, definitionId),
+          );
+
+          const existing = await tx.query.votesTable.findFirst({
+            where: constraint,
+          });
+
+          const value = (v: "up" | "down") => (v === "up" ? 1 : -1);
+
+          if (existing) {
+            if (existing.kind === vote) {
+              await tx.delete(votesTable).where(constraint);
+              return await tx
+                .update(definitionsTable)
+                .set({ score: sql`${definitionsTable.score} - ${value(vote)}` })
+                .where(eq(definitionsTable.id, definitionId))
+                .returning();
+            } else {
+              await tx.update(votesTable).set({ kind: vote }).where(constraint);
+              return await tx
+                .update(definitionsTable)
+                .set({
+                  score: sql`${definitionsTable.score} + ${
+                    value(vote) - value(existing.kind)
+                  }`,
+                })
+                .where(eq(definitionsTable.id, definitionId))
+                .returning();
+            }
+          } else {
+            await tx.insert(votesTable).values({
+              userId,
+              definitionId,
+              kind: vote,
+            });
+
+            return await tx
+              .update(definitionsTable)
+              .set({ score: sql`${definitionsTable.score} + ${value(vote)}` })
+              .where(eq(definitionsTable.id, definitionId))
+              .returning();
+          }
+        });
+
+        return { score: updatedDefinition.score };
+      }),
   },
 });
 

@@ -96,4 +96,17 @@ export const tagsRouter = createTRPCRouter({
   getAll: baseProcedure.query(async () => {
     return await db.select().from(tagsTable);
   }),
+  definitions: baseProcedure
+    .input(z.object({ tagId: z.number() }))
+    .query(async ({ input: { tagId } }) => {
+      return await db
+        .select({
+          ...getTableColumns(definitionsTable),
+          term: termsTable.term,
+        })
+        .from(tagsToTerms)
+        .innerJoin(definitionsTable, eq(definitionsTable.id, tagsToTerms.definitionId))
+        .innerJoin(termsTable, eq(termsTable.id, definitionsTable.termId))
+        .where(eq(tagsToTerms.tagId, tagId));
+    }),
 });
