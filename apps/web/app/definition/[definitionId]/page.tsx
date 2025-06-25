@@ -1,3 +1,4 @@
+import { EditDefinitionDialog } from "@/components/definition/edit-dialog";
 import { EditTags } from "@/components/tags/selector";
 import { TermTags, TermTagsFallback } from "@/components/tags/tags";
 import { TermCommentBox } from "@/components/term/comment-box";
@@ -40,6 +41,10 @@ export default async function TermPage(props: {
           />
           <section className="flex-1">
             <h1 className="text-4xl font-semibold">{definition.term}</h1>
+            <EditDefinitionDialog
+              defaultValues={definition}
+              definitionId={definition.id}
+            />
             <div>
               <span className="italic">Definition: </span>
               {definition.definition}

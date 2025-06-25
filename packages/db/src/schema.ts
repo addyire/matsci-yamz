@@ -67,10 +67,28 @@ export const definitionsTableRelations = relations(
       fields: [definitionsTable.authorId],
       references: [usersTable.id],
     }),
+    edits: many(editsTable),
     comments: many(commentsTable),
     votes: many(votesTable),
   }),
 );
+
+// --- DEFINITION EDITS ---
+export const editsTable = pgTable("definitionEdits", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  definitionId: integer()
+    .references(() => definitionsTable.id)
+    .notNull(),
+  definition: text().notNull(), // what the definition used to be
+  editedAt: timestamp().defaultNow().notNull(),
+});
+
+export const editsTableRelations = relations(editsTable, ({ one }) => ({
+  definition: one(definitionsTable, {
+    fields: [editsTable.definitionId],
+    references: [definitionsTable.id],
+  }),
+}));
 
 // --- VOTES ---
 export const voteTypeEnum = pgEnum("vote_type", ["up", "down"]);

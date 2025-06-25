@@ -7,6 +7,7 @@ import {
   usersTable,
   votesTable,
   definitionsTable,
+  editsTable,
 } from "@yamz/db";
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
@@ -19,6 +20,47 @@ export const appRouter = createTRPCRouter({
   tags: tagsRouter,
   user: userRouter,
   definitions: {
+    edit: authenticatedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          definition: z.string(),
+          example: z.string(),
+        }),
+      )
+      .mutation(
+        async ({ ctx: { userId }, input: { id, definition, example } }) => {
+          const res = await db.transaction(async (tx) => {
+            const where = and(
+              eq(definitionsTable.authorId, userId),
+              eq(definitionsTable.id, id),
+            );
+
+            // find the old definition
+            const def = await db.query.definitionsTable.findFirst({
+              where,
+            });
+
+            if (!def) throw new Error("Definition doesn't exist");
+
+            // update it
+            const [updatedDef] = await tx
+              .update(definitionsTable)
+              .set({ definition, example })
+              .where(where)
+              .returning();
+
+            await db.insert(editsTable).values({
+              definitionId: def.id,
+              definition: def.definition,
+            });
+
+            return updatedDef;
+          });
+
+          return res;
+        },
+      ),
     get: baseProcedure
       .input(z.object({ definitionId: z.number() }))
       .query(async ({ ctx: { userId }, input: { definitionId } }) => {
@@ -137,18 +179,6 @@ export const appRouter = createTRPCRouter({
 
         return insertedComment;
       }),
-  },
-  votes: {
-    vote: authenticatedProcedure
-      .input(
-        z.object({
-          definitionId: z.number(),
-          vote: z.enum(["up", "down"]),
-        }),
-      )
-      .mutation(
-        async ({ ctx: { userId }, input: { definitionId, vote } }) => {},
-      ),
   },
 });
 
