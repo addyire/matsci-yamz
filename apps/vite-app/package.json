@@ -1,0 +1,31 @@
+{
+  "name": "matsci-yamz-vite",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@yamz/db": "workspace:*",
+    "@tanstack/react-query": "^5.80.5",
+    "@tanstack/router": "^1.21.0",
+    "@trpc/client": "^11.3.0",
+    "@trpc/react-query": "^11.3.0",
+    "@trpc/server": "^11.3.0",
+    "@trpc/tanstack-react-query": "^11.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@yamz/eslint-config": "workspace:*",
+    "@yamz/typescript-config": "workspace:*",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vite": "^4.5.0"
+  }
+}
