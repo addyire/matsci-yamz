@@ -1,52 +1,146 @@
-import commandLineArgs from "command-line-args";
-import { db } from "@yamz/db";
-import { ollama } from "../src/ollama";
-import zodToJsonSchema from "zod-to-json-schema";
-import { DefinitionOutput } from "../src/outputs";
-
-const options = commandLineArgs([
-  {
-    name: "term",
-    type: String,
-    alias: "t",
-  },
-]);
+import { commentsTable, db, definitionsTable, editsTable } from "@yamz/db";
+import { LLMCreateDefPrompt, runLLM } from "../src/ollama";
+import { GetAiUser, GetJobs, SetJobStatus } from "../src/crud";
+import { asc, eq, sql } from "drizzle-orm";
+import { unionAll } from "drizzle-orm/pg-core";
 
 const main = async () => {
-  const term = options.term as string;
+  const aiUser = await GetAiUser();
 
-  console.log(`Generating context for ${term}...`);
+  // fetch all create jobs
+  const createJobs = await GetJobs("create");
 
-  const context = await db.query.termsTable.findMany({
-    where: (tt, { eq }) => eq(tt.term, term),
-    with: {
-      comments: true,
-      votes: true,
-    },
-  });
+  console.log(`Loaded ${createJobs.length} create jobs...`);
 
-  let str = `Define: ${term}\n\n`;
+  // process each job
+  for (const job of createJobs) {
+    console.log(`===> STARTING JOB ${job.id}`);
 
-  for (let i = 0; i < context.length; i++) {
-    str += `-- Example ${i + 1} --\n`;
+    // mark job as in-progress
+    await SetJobStatus(job.id, "in_progress");
 
-    const def = context[i];
+    // Create the message we will send to the LLM
+    const prompt = LLMCreateDefPrompt(job);
 
-    str += def.examples + "\n\n";
+    console.log(`-- PROMPT --`);
+    console.log(prompt);
+
+    const result = await runLLM([
+      {
+        role: "user",
+        content: prompt,
+      },
+    ]);
+
+    console.log("-- RESULT --");
+    console.log(result);
+
+    if (!result) {
+      await SetJobStatus(job.id, "failed");
+      continue;
+    }
+
+    console.log(`Inserting into database...`);
+    const [insertedDefinition] = await db
+      .insert(definitionsTable)
+      .values({
+        ...result,
+        authorId: aiUser.id,
+        termId: job.termId,
+      })
+      .returning();
+
+    // insert the definition to our definition history table
+    await db.insert(editsTable).values({
+      prevDefinition: null,
+      definition: result.definition,
+      definitionId: insertedDefinition.id,
+    });
+
+    await SetJobStatus(job.id, "succeeded", insertedDefinition.id);
   }
 
-  console.log(`Context:\n\n${str}`);
+  const revisionJobs = await GetJobs("revise");
 
-  const ai = await ollama.chat({
-    model: "gemma3",
-    messages: [{ role: "user", content: str }],
-    format: zodToJsonSchema(DefinitionOutput),
-  });
+  for (const job of revisionJobs) {
+    const aiDefinitionId = job.definitionId!;
 
-  const data = JSON.parse(ai.message.content) as DefinitionOutput;
+    const commentsQ = db
+      .select({
+        type: sql<"comment" | "edit">`'comment'`.as("type"),
+        id: commentsTable.id,
+        body: commentsTable.message,
+        createdAt: commentsTable.createdAt,
+      })
+      .from(commentsTable)
+      .where(eq(commentsTable.definitionId, aiDefinitionId));
 
-  console.log(`== MODEL OUTPUT ==`);
-  console.log(data);
+    const editsQ = db
+      .select({
+        type: sql<"edit" | "comment">`'edit'`.as("type"),
+        id: editsTable.id,
+        body: editsTable.definition,
+        createdAt: editsTable.editedAt,
+      })
+      .from(editsTable)
+      .where(eq(editsTable.definitionId, aiDefinitionId));
+
+    const timelineQ = unionAll(commentsQ, editsQ).as("timeline");
+
+    const timeline = await db
+      .select()
+      .from(timelineQ)
+      .orderBy(asc(timelineQ.createdAt));
+
+    const messages = [
+      {
+        role: "user",
+        content: LLMCreateDefPrompt(job),
+      },
+      ...timeline.map(({ type, body }) => ({
+        role: type === "edit" ? "assistant" : "user",
+        content: type === "comment" ? "Comment: " + body : body,
+      })),
+    ];
+
+    console.log("Messages", messages);
+
+    const result = await runLLM(messages);
+
+    console.log("Result");
+    console.log(result);
+  }
+
+  // const context = await db.query.termsTable.findMany({
+  //   where: (tt, { eq }) => eq(tt.term, term),
+  //   with: {
+  //     comments: true,
+  //     votes: true,
+  //   },
+  // });
+  //
+  // let str = `Define: ${term}\n\n`;
+  //
+  // for (let i = 0; i < context.length; i++) {
+  //   str += `-- Example ${i + 1} --\n`;
+  //
+  //   const def = context[i];
+  //
+  //   str += def.examples + "\n\n";
+  // }
+  //
+  // console.log(`Context:\n\n${str}`);
+  //
+  // const ai = await ollama.chat({
+  //   model: "gemma3",
+  //   messages: [{ role: "user", content: str }],
+  //   format: zodToJsonSchema(DefinitionOutput),
+  // });
+  //
+  // const data = JSON.parse(ai.message.content) as DefinitionOutput;
+  //
+  // console.log(`== MODEL OUTPUT ==`);
+  // console.log(data);
 };
 
 main();

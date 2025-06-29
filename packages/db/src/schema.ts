@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   integer,
   varchar,
@@ -8,6 +8,8 @@ import {
   timestamp,
   pgEnum,
   primaryKey,
+  uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
 
 // --- USERS ---
@@ -18,6 +20,7 @@ export const usersTable = pgTable("users", {
   name: varchar({ length: 255 }),
   email: varchar({ length: 254 }),
   isAi: boolean().notNull().default(false),
+  isAdmin: boolean().default(false),
   createdAt: timestamp().defaultNow().notNull(),
   notifications: boolean().default(false),
 });
@@ -39,6 +42,7 @@ export const termsTable = pgTable("terms", {
 
 export const termsTableRelations = relations(termsTable, ({ one, many }) => ({
   definitions: many(definitionsTable),
+  jobs: many(jobsTable),
 }));
 
 // --- DEFINITIONS ---
@@ -79,6 +83,7 @@ export const editsTable = pgTable("definitionEdits", {
   definitionId: integer()
     .references(() => definitionsTable.id)
     .notNull(),
+  prevDefinition: text(),
   definition: text().notNull(), // what the definition used to be
   editedAt: timestamp().defaultNow().notNull(),
 });
@@ -166,13 +171,51 @@ export const tagsToTerms = pgTable(
 
 // --- JOBS ---
 
-const jobStatusEnum = pgEnum("job_status", [
+export const jobStatusEnum = pgEnum("job_status", [
   "pending",
   "in_progress",
   "succeeded",
   "failed",
 ]);
 
-const jobType = pgEnum("job_type", ["create", "revise"]);
+export const jobTypeEnum = pgEnum("job_type", [
+  "create",
+  "new_example",
+  "revise",
+]);
 
-export const jobsTable = pgTable("jobs", {});
+export type Job = typeof jobsTable.$inferSelect;
+export const jobsTable = pgTable(
+  "jobs",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    termId: integer()
+      .references(() => termsTable.id)
+      .notNull(),
+    definitionId: integer().references(() => definitionsTable.id),
+    type: jobTypeEnum().notNull(),
+    status: jobStatusEnum().notNull().default("pending"),
+  },
+  (table) => [
+    // index to ensure each term only has one pending job
+    uniqueIndex("unique_jobs")
+      .on(table.termId)
+      .where(sql`${table.status} = 'pending'`),
+    // check to ensure if job type is revise, the definitionId is set
+    check(
+      "revise_def_id",
+      sql`(${table.type} in ('revise') and ${table.definitionId} is not null) or (${table.type} not in ('revise'))`,
+    ),
+  ],
+);
+
+export const jobsTableRelations = relations(jobsTable, ({ one }) => ({
+  term: one(termsTable, {
+    fields: [jobsTable.termId],
+    references: [termsTable.id],
+  }),
+  definition: one(definitionsTable, {
+    fields: [jobsTable.definitionId],
+    references: [definitionsTable.id],
+  }),
+}));

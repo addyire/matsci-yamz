@@ -1,11 +1,45 @@
-import { Ollama } from "ollama";
+import { Message, Ollama } from "ollama";
+import { z } from "zod";
+import { CreateJob } from "./crud";
+import zodToJsonSchema from "zod-to-json-schema";
 
-export const ollama = new Ollama()
+type DefinitionOutput = z.infer<typeof DefinitionOutput>;
+const DefinitionOutput = z.object({
+  definition: z.string(),
+  example: z.string(),
+});
 
-  // const ai = await ollama.chat({
-  //   model: 'gemma3',
-  //   messages: [{ role: 'user', content: 'Define: melt\n\nExample: The metal will melt at 400 degrees.' }],
-  //   format: zodToJsonSchema(DefinitionOutput),
-  //   keep_alive: 0,
-  //   stream: true
-  // })
+export const LLMSystemPrompt = ``;
+
+export const LLMCreateDefPrompt = (job: CreateJob) => {
+  let str = `Term: ${job.term.term}\n\nExamples:\n`;
+
+  for (const def of job.term.definitions) {
+    str += ` - ${def.example}`;
+  }
+
+  return str;
+};
+
+export const ollama = new Ollama();
+
+export const runLLM = async (messages: Message[]) => {
+  const res = await ollama.chat({
+    model: "gemma3",
+    messages: [{ role: "system", content: LLMSystemPrompt }, ...messages],
+    format: zodToJsonSchema(DefinitionOutput),
+    // Make's sure model doesn't stop running until 5 seconds after our last request
+    keep_alive: 5,
+    think: false,
+  });
+
+  try {
+    const raw = JSON.parse(res.message.content);
+    const data = DefinitionOutput.parse(raw);
+
+    return data;
+  } catch (err) {
+    console.log(JSON.stringify(res, null, 2));
+    console.error("Model returned an invalid response", err);
+  }
+};
