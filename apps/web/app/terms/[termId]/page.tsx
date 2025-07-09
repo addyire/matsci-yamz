@@ -1,12 +1,6 @@
-import { TermVotes, TermVotesFallback } from "@/components/term/votes";
-import { Card } from "@/components/ui/card";
-import { db, definitionsTable, termsTable, votesTable } from "@yamz/db";
+import { db, termsTable } from "@yamz/db";
 import { HydrateClient, trpc } from "@/trpc/server";
-import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
-import { TermDefinition, TermMetadata } from "@/components/term/preview";
-import Link from "next/link";
-import { Suspense } from "react";
-import { getSession } from "@/lib/session";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { DefinitionList } from "./definitions";
 

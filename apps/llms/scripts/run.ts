@@ -1,4 +1,10 @@
-import { commentsTable, db, definitionsTable, editsTable } from "@yamz/db";
+import {
+  commentsTable,
+  db,
+  definitionsTable,
+  editsTable,
+  jobsTable,
+} from "@yamz/db";
 import { LLMCreateDefPrompt, runLLM } from "../src/ollama";
 import { GetAiUser, GetJobs, SetJobStatus } from "../src/crud";
 import { asc, eq, sql } from "drizzle-orm";
@@ -106,9 +112,32 @@ const main = async () => {
     console.log("Messages", messages);
 
     const result = await runLLM(messages);
+    if (!result) throw new Error("something went wrong");
 
     console.log("Result");
     console.log(result);
+
+    await db.transaction(async (tx) => {
+      const currentDef = await tx.query.definitionsTable.findFirst({
+        where: eq(definitionsTable.id, aiDefinitionId),
+      });
+
+      await tx.insert(editsTable).values({
+        definition: result.definition,
+        definitionId: aiDefinitionId,
+        prevDefinition: currentDef!.definition,
+      });
+
+      await tx
+        .update(definitionsTable)
+        .set({ definition: result.definition })
+        .where(eq(definitionsTable.id, aiDefinitionId));
+
+      await tx
+        .update(jobsTable)
+        .set({ status: "succeeded" })
+        .where(eq(jobsTable.id, job.id));
+    });
   }
 
   // const context = await db.query.termsTable.findMany({

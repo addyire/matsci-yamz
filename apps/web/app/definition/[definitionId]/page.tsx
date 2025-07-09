@@ -3,7 +3,6 @@ import { EditTags } from "@/components/tags/selector";
 import { TermTags, TermTagsFallback } from "@/components/tags/tags";
 import { TermCommentBox } from "@/components/term/comment-box";
 import { TermComments } from "@/components/term/comments";
-import { TermMetadata } from "@/components/term/preview";
 import { TermVotes } from "@/components/term/votes";
 import { getSession } from "@/lib/session";
 import { HydrateClient, trpc } from "@/trpc/server";
@@ -27,7 +26,7 @@ export default async function TermPage(props: {
 
   return (
     <HydrateClient>
-      <main className="p-8 space-y-4">
+      <main className="p-8 space-y-4 max-w-7xl w-full mx-auto">
         <Link
           className="flex items-center gap-1"
           href={`/terms/${definition.termId}`}

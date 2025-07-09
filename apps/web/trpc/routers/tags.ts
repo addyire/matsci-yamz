@@ -1,13 +1,7 @@
 import { z } from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
 import { authenticatedProcedure } from "../procedures";
-import {
-  db,
-  definitionsTable,
-  tagsTable,
-  tagsToTerms,
-  termsTable,
-} from "@yamz/db";
+import { db, definitionsTable, tagsTable, tagsToDefinitions } from "@yamz/db";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
@@ -30,9 +24,9 @@ export const tagsRouter = createTRPCRouter({
     .query(async ({ input: { definitionId } }) => {
       return await db
         .select(getTableColumns(tagsTable))
-        .from(tagsToTerms)
-        .where(eq(tagsToTerms.definitionId, definitionId))
-        .innerJoin(tagsTable, eq(tagsToTerms.tagId, tagsTable.id));
+        .from(tagsToDefinitions)
+        .where(eq(tagsToDefinitions.definitionId, definitionId))
+        .innerJoin(tagsTable, eq(tagsToDefinitions.tagId, tagsTable.id));
     }),
   // toggles a tag on a given term
   toggle: authenticatedProcedure
@@ -43,18 +37,17 @@ export const tagsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx: { userId }, input: { definitionId, tagId } }) => {
-      // find the term, and the relation if it exists
       const [definition] = await db
         .select({
           authorId: definitionsTable.authorId,
-          exists: tagsToTerms.definitionId,
+          exists: tagsToDefinitions.definitionId,
         })
         .from(definitionsTable)
         .leftJoin(
-          tagsToTerms,
+          tagsToDefinitions,
           and(
-            eq(termsTable.id, tagsToTerms.definitionId),
-            eq(tagsToTerms.tagId, tagId),
+            eq(definitionsTable.id, tagsToDefinitions.definitionId),
+            eq(tagsToDefinitions.tagId, tagId),
           ),
         )
         .where(eq(definitionsTable.id, definitionId))
@@ -77,17 +70,17 @@ export const tagsRouter = createTRPCRouter({
       if (definition.exists)
         // relation exists - delete it
         await db
-          .delete(tagsToTerms)
+          .delete(tagsToDefinitions)
           .where(
             and(
-              eq(tagsToTerms.definitionId, definitionId),
-              eq(tagsToTerms.tagId, tagId),
+              eq(tagsToDefinitions.definitionId, definitionId),
+              eq(tagsToDefinitions.tagId, tagId),
             ),
           );
       else
         // relation doesn't exist - insert
         await db
-          .insert(tagsToTerms)
+          .insert(tagsToDefinitions)
           .values({ definitionId, tagId })
           .onConflictDoNothing();
 

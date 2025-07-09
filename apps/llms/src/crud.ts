@@ -1,5 +1,5 @@
-import { db, jobsTable, usersTable } from "@yamz/db";
-import { and, eq } from "drizzle-orm";
+import { db, definitionsTable, jobsTable, usersTable } from "@yamz/db";
+import { and, asc, eq } from "drizzle-orm";
 
 export const GetAiUser = async () => {
   let aiUser = await db.query.usersTable.findFirst({
@@ -28,7 +28,12 @@ export const GetJobs = (type: "create" | "revise") =>
     where: and(eq(jobsTable.type, type), eq(jobsTable.status, "pending")),
     with: {
       term: {
-        with: { definitions: true },
+        with: {
+          definitions: {
+            limit: 1,
+            orderBy: asc(definitionsTable.createdAt),
+          },
+        },
       },
     },
   });

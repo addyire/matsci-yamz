@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -17,9 +16,12 @@ import { DefineTerm, DefineTermSchema } from "@/lib/schemas/terms";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/trpc/client";
 import { useRouter } from "next/navigation";
+import { AutoComplete } from "@/components/autocomplete";
+import { Input } from "@/components/ui/input";
 
 export const DefineTermForm = () => {
   const router = useRouter();
+
   const form = useForm<DefineTerm>({
     resolver: zodResolver(DefineTermSchema),
     defaultValues: { term: "", examples: "", definition: "" },
@@ -29,7 +31,7 @@ export const DefineTermForm = () => {
     onSuccess: ({ definition }) => router.push(`/definition/${definition.id}`),
   });
 
-  console.log(mutation);
+  const { data } = trpc.terms.list.useQuery(undefined);
 
   return (
     <Card>
@@ -46,7 +48,10 @@ export const DefineTermForm = () => {
                 <FormItem>
                   <FormLabel>Term</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <AutoComplete
+                      onValueChange={field.onChange}
+                      options={data || []}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

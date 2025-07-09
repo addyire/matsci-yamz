@@ -1,10 +1,10 @@
 import { HydrateClient, trpc } from "@/trpc/server";
-import { Job } from "@yamz/db";
-import { ColumnDef } from "@tanstack/react-table";
 import { JobsTable } from "./table";
 
 export default async function AdminPage() {
-  await trpc.jobs.get.prefetch();
+  await trpc.admin.jobs.get.prefetch();
+
+  await trpc.admin.ollama.models.prefetch();
 
   return (
     <HydrateClient>

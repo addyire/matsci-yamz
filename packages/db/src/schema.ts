@@ -74,6 +74,7 @@ export const definitionsTableRelations = relations(
     edits: many(editsTable),
     comments: many(commentsTable),
     votes: many(votesTable),
+    tags: many(tagsToDefinitions),
   }),
 );
 
@@ -156,7 +157,11 @@ export const tagsTable = pgTable("tags", {
   name: text().notNull(),
 });
 
-export const tagsToTerms = pgTable(
+export const tagsTableRelations = relations(tagsTable, ({ many }) => ({
+  definitions: many(tagsToDefinitions),
+}));
+
+export const tagsToDefinitions = pgTable(
   "tagsToTerms",
   {
     definitionId: integer()
@@ -168,6 +173,17 @@ export const tagsToTerms = pgTable(
   },
   (table) => [primaryKey({ columns: [table.tagId, table.definitionId] })],
 );
+
+export const tagsToTermsRelations = relations(tagsToDefinitions, ({ one }) => ({
+  definition: one(definitionsTable, {
+    fields: [tagsToDefinitions.definitionId],
+    references: [definitionsTable.id],
+  }),
+  tag: one(tagsTable, {
+    fields: [tagsToDefinitions.tagId],
+    references: [tagsTable.id],
+  }),
+}));
 
 // --- JOBS ---
 
@@ -201,6 +217,10 @@ export const jobsTable = pgTable(
     uniqueIndex("unique_jobs")
       .on(table.termId)
       .where(sql`${table.status} = 'pending'`),
+    // index to ensure each term only gets one ai definition
+    uniqueIndex("unique_term_creation")
+      .on(table.termId)
+      .where(sql`${table.type} = 'create'`),
     // check to ensure if job type is revise, the definitionId is set
     check(
       "revise_def_id",

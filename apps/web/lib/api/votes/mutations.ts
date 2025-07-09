@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 export type VoteState =
   | {
       score: number;
+      ok: true;
     }
   | { error: null | string };
 

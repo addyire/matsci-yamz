@@ -54,7 +54,8 @@ export const definitionsRouter = createTRPCRouter({
         // create job for LLM
         await tx
           .insert(jobsTable)
-          .values({ termId: insertedTerm.id, type: "create" });
+          .values({ termId: insertedTerm.id, type: "create" })
+          .onConflictDoNothing(); // dont if a create job already exists
 
         return { term: insertedTerm, definition: insertedDefinition };
       });

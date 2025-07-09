@@ -1,6 +1,6 @@
 import { Message, Ollama } from "ollama";
 import { z } from "zod";
-import { CreateJob } from "./crud";
+import { CreateJob } from "../crud";
 import zodToJsonSchema from "zod-to-json-schema";
 
 type DefinitionOutput = z.infer<typeof DefinitionOutput>;

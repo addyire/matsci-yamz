@@ -20,7 +20,10 @@ import { trpc } from "@/trpc/client";
 export const EditProfileForm = ({ defaults }: { defaults: User }) => {
   const form = useForm<EditProfile>({
     resolver: zodResolver(EditProfileSchema),
-    defaultValues: defaults,
+    defaultValues: {
+      email: defaults.email || undefined,
+      name: defaults.name || undefined,
+    },
   });
 
   const { mutate, isPending } = trpc.user.edit.useMutation();
