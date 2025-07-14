@@ -10,6 +10,7 @@ import {
   primaryKey,
   uniqueIndex,
   check,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // --- USERS ---
@@ -42,23 +43,27 @@ export const termsTable = pgTable("terms", {
 
 export const termsTableRelations = relations(termsTable, ({ one, many }) => ({
   definitions: many(definitionsTable),
-  jobs: many(jobsTable),
+  chats: many(chatsTable),
 }));
 
 // --- DEFINITIONS ---
 export type Definition = typeof definitionsTable.$inferSelect;
-export const definitionsTable = pgTable("definitions", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  termId: integer()
-    .references(() => termsTable.id)
-    .notNull(),
-  authorId: integer().references(() => usersTable.id),
-  definition: text().notNull(),
-  example: text().notNull(),
-  score: integer().notNull().default(0),
-  createdAt: timestamp().defaultNow().notNull(),
-  updatedAt: timestamp().$onUpdateFn(() => new Date()),
-});
+export const definitionsTable = pgTable(
+  "definitions",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    termId: integer()
+      .references(() => termsTable.id)
+      .notNull(),
+    authorId: integer().references(() => usersTable.id),
+    definition: text().notNull(),
+    example: text().notNull(),
+    score: integer().notNull().default(0),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().$onUpdateFn(() => new Date()),
+  },
+  (table) => [unique().on(table.authorId, table.termId)],
+);
 
 export const definitionsTableRelations = relations(
   definitionsTable,
@@ -237,5 +242,24 @@ export const jobsTableRelations = relations(jobsTable, ({ one }) => ({
   definition: one(definitionsTable, {
     fields: [jobsTable.definitionId],
     references: [definitionsTable.id],
+  }),
+}));
+
+export const chatTypeEnum = pgEnum("chat_type", ["system", "user"]);
+
+export const chatsTable = pgTable("chats", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  termId: integer()
+    .references(() => termsTable.id)
+    .notNull(),
+  role: chatTypeEnum().notNull(),
+  message: text().notNull(),
+  createdAt: timestamp().defaultNow().notNull(),
+});
+
+export const chatsTableRelations = relations(chatsTable, ({ one }) => ({
+  term: one(termsTable, {
+    fields: [chatsTable.termId],
+    references: [termsTable.id],
   }),
 }));

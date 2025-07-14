@@ -18,52 +18,60 @@ import {
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/trpc-helpers";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlayIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-type Job = RouterOutput["admin"]["jobs"]["get"][number];
+type Job = RouterOutput["admin"]["terms"][number];
 const columns: ColumnDef<Job>[] = [
-  { accessorKey: "id", header: "ID" },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ getValue }) => <Badge>{getValue<string>()}</Badge>,
+    id: "term",
+    cell: ({ row }) => (
+      <Link href={`/admin/terms/${row.original.id}`}>{row.original.term}</Link>
+    ),
+    header: "Term",
   },
-  { accessorKey: "type", header: "Type" },
-  { id: "term", cell: ({ row }) => row.original.term.term, header: "Term" },
   {
     id: "run",
-    cell: ({ row, table }) => (
-      <Button
-        disabled={table.options.meta!.loading || false}
-        onClick={() => table.options.meta?.run(row.original.id)}
-      >
-        <PlayIcon className="size-4" />
-      </Button>
-    ),
+    header: "Run",
+    cell: ({ row, table }) => {
+      if (!row.original.pending) return null;
+
+      const { mutate, isPending } = trpc.admin.run.useMutation({
+        onSuccess: () => table.options.meta.router.refresh(),
+      });
+
+      return (
+        <Button
+          disabled={isPending}
+          onClick={() => mutate(row.original.id)}
+          variant="ghost"
+          className="!p-1 !h-min"
+        >
+          <PlayIcon className="size-4" />
+        </Button>
+      );
+    },
   },
 ];
 
 export function JobsTable() {
-  const { data } = trpc.admin.jobs.get.useQuery(undefined, {
+  const router = useRouter();
+
+  const { data } = trpc.admin.terms.useQuery(undefined, {
     initialData: [],
   });
-
-  const { mutate, isPending } = trpc.admin.jobs.run.useMutation();
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    meta: {
-      run: mutate,
-      loading: isPending,
-    },
+    meta: { router },
   });
 
   return (
-    <Card className="!py-0">
+    <Card className="bg-secondary !py-0">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

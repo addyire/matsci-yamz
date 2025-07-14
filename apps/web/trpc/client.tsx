@@ -2,7 +2,7 @@
 // ^-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, loggerLink } from "@trpc/client";
+import { httpBatchLink, httpBatchStreamLink, loggerLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { useState } from "react";
 import { makeQueryClient } from "./query-client";
@@ -39,7 +39,7 @@ export function TRPCProvider(
     trpc.createClient({
       links: [
         loggerLink(),
-        httpBatchLink({
+        httpBatchStreamLink({
           // transformer: superjson, <-- if you use a data transformer
           url: getUrl(),
         }),

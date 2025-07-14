@@ -5,7 +5,7 @@ import {
   commentsTable,
   usersTable,
   definitionsTable,
-  jobsTable,
+  chatsTable,
 } from "@yamz/db";
 import { asc, eq, getTableColumns } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
@@ -51,16 +51,13 @@ export const commentsRouter = createTRPCRouter({
           .innerJoin(usersTable, eq(usersTable.id, definitionsTable.authorId))
           .limit(1);
 
-        // if ai made, create a job for ai to revise the definition
+        // if ai made, create feedback chat
         if (definition.isAi)
-          await tx
-            .insert(jobsTable)
-            .values({
-              type: "revise",
-              termId: definition.termId,
-              definitionId: definition.id,
-            })
-            .onConflictDoNothing();
+          await tx.insert(chatsTable).values({
+            role: "user",
+            message: `<feedback>\n${comment}`,
+            termId: definition.termId,
+          });
 
         return insertedComment;
       });

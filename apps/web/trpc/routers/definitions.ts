@@ -7,6 +7,7 @@ import {
   definitionsTable,
   editsTable,
   jobsTable,
+  chatsTable,
 } from "@yamz/db";
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
@@ -26,38 +27,43 @@ export const definitionsRouter = createTRPCRouter({
         // normalize the term
         const term = input.term.trim().toLowerCase();
 
-        const [insertedTerm] = await tx
-          .insert(termsTable)
-          .values({ term })
-          .onConflictDoUpdate({
-            target: [termsTable.term],
-            set: { term },
-          })
-          .returning();
+        let dbTerm = await tx.query.termsTable.findFirst({
+          where: eq(termsTable.term, term),
+        });
+        if (!dbTerm) {
+          //first time term has been defined, so create it
+          const [insertedTerm] = await tx
+            .insert(termsTable)
+            .values({ term })
+            .returning();
+
+          // insert the ai chat
+          await tx.insert(chatsTable).values({
+            role: "user",
+            message: `<term>\n${term}\n<example>\n${input.examples}`,
+            termId: insertedTerm.id,
+          });
+
+          // create job for LLM
+          await tx
+            .insert(jobsTable)
+            .values({ termId: insertedTerm.id, type: "create" })
+            .onConflictDoNothing(); // dont if a create job already exists
+
+          dbTerm = insertedTerm;
+        }
 
         const [insertedDefinition] = await tx
           .insert(definitionsTable)
           .values({
-            termId: insertedTerm.id,
+            termId: dbTerm.id,
             authorId,
             definition: input.definition,
             example: input.examples,
           })
           .returning();
 
-        // insert the edit
-        await tx.insert(editsTable).values({
-          definition: input.definition,
-          definitionId: insertedDefinition.id,
-        });
-
-        // create job for LLM
-        await tx
-          .insert(jobsTable)
-          .values({ termId: insertedTerm.id, type: "create" })
-          .onConflictDoNothing(); // dont if a create job already exists
-
-        return { term: insertedTerm, definition: insertedDefinition };
+        return { term: dbTerm, definition: insertedDefinition };
       });
 
       revalidatePath("/terms");

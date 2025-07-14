@@ -3,7 +3,7 @@ import { tagsRouter } from "./tags";
 import { userRouter } from "./user";
 import { definitionsRouter } from "./definitions";
 import { commentsRouter } from "./comments";
-import { adminRouter, jobsRouter } from "./jobs";
+import { adminRouter } from "./admin";
 import { termsRouter } from "./terms";
 
 export const appRouter = createTRPCRouter({

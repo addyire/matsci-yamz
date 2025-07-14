@@ -37,59 +37,28 @@ export const GetAiUser = async () => {
   return aiUser;
 };
 
-export type CreateJob = Awaited<ReturnType<typeof GetJobs>>[number];
-export const GetJobs = (type: "create" | "revise") =>
-  db.query.jobsTable.findMany({
-    where: and(eq(jobsTable.type, type), eq(jobsTable.status, "pending")),
-    with: {
-      term: {
-        with: {
-          definitions: {
-            limit: 1,
-            orderBy: asc(definitionsTable.createdAt),
-          },
-        },
-      },
-    },
+export const UpsertAIDefinition = async (
+  termId: number,
+  data: { definition: string; example: string },
+) => {
+  const aiUser = await GetAiUser();
+
+  const existingDef = await db.query.definitionsTable.findFirst({
+    where: and(
+      eq(definitionsTable.termId, termId),
+      eq(definitionsTable.authorId, aiUser.id),
+    ),
   });
 
-export const SetJobStatus = (
-  id: number,
-  status: "in_progress" | "succeeded" | "failed",
-  definitionId?: number,
-) =>
-  db
-    .update(jobsTable)
-    .set({ status, definitionId })
-    .where(eq(jobsTable.id, id));
-
-export const DefinitionHistory = async (definitionId: number) => {
-  const commentsQ = db
-    .select({
-      type: sql<"comment" | "edit">`'comment'`.as("type"),
-      id: commentsTable.id,
-      body: commentsTable.message,
-      createdAt: commentsTable.createdAt,
-    })
-    .from(commentsTable)
-    .where(eq(commentsTable.definitionId, definitionId));
-
-  const editsQ = db
-    .select({
-      type: sql<"edit" | "comment">`'edit'`.as("type"),
-      id: editsTable.id,
-      body: editsTable.definition,
-      createdAt: editsTable.editedAt,
-    })
-    .from(editsTable)
-    .where(eq(editsTable.definitionId, definitionId));
-
-  const timelineQ = unionAll(commentsQ, editsQ).as("timeline");
-
-  const timeline = await db
-    .select()
-    .from(timelineQ)
-    .orderBy(asc(timelineQ.createdAt));
-
-  return timeline;
+  if (existingDef)
+    await db
+      .update(definitionsTable)
+      .set(data)
+      .where(eq(definitionsTable.id, existingDef.id));
+  else
+    await db.insert(definitionsTable).values({
+      termId,
+      ...data,
+      authorId: aiUser.id,
+    });
 };
