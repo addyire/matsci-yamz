@@ -1,9 +1,79 @@
 {
-  "id": "f67f6666-b001-4258-9b2c-2e0534978956",
-  "prevId": "2303e2a7-8cc1-4c5c-8e0e-ce794148d37e",
+  "id": "3a34efe4-f4aa-4e89-b3ac-65f909910270",
+  "prevId": "57086eee-be88-4254-8896-2b424dc2236a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.chats": {
+      "name": "chats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "chats_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "termId": {
+          "name": "termId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "chat_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "chats_termId_terms_id_fk": {
+          "name": "chats_termId_terms_id_fk",
+          "tableFrom": "chats",
+          "tableTo": "terms",
+          "columnsFrom": [
+            "termId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.comments": {
       "name": "comments",
       "schema": "",
@@ -25,8 +95,8 @@
             "cycle": false
           }
         },
-        "termId": {
-          "name": "termId",
+        "definitionId": {
+          "name": "definitionId",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -42,16 +112,23 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "comments_termId_terms_id_fk": {
-          "name": "comments_termId_terms_id_fk",
+        "comments_definitionId_definitions_id_fk": {
+          "name": "comments_definitionId_definitions_id_fk",
           "tableFrom": "comments",
-          "tableTo": "terms",
+          "tableTo": "definitions",
           "columnsFrom": [
-            "termId"
+            "definitionId"
           ],
           "columnsTo": [
             "id"
@@ -79,6 +156,403 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.definitions": {
+      "name": "definitions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "definitions_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "termId": {
+          "name": "termId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authorId": {
+          "name": "authorId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "definition": {
+          "name": "definition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "example": {
+          "name": "example",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "definitions_termId_terms_id_fk": {
+          "name": "definitions_termId_terms_id_fk",
+          "tableFrom": "definitions",
+          "tableTo": "terms",
+          "columnsFrom": [
+            "termId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "definitions_authorId_users_id_fk": {
+          "name": "definitions_authorId_users_id_fk",
+          "tableFrom": "definitions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "authorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "definitions_authorId_termId_unique": {
+          "name": "definitions_authorId_termId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "authorId",
+            "termId"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.definitionEdits": {
+      "name": "definitionEdits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "definitionEdits_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "definitionId": {
+          "name": "definitionId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prevDefinition": {
+          "name": "prevDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "definition": {
+          "name": "definition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "editedAt": {
+          "name": "editedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "definitionEdits_definitionId_definitions_id_fk": {
+          "name": "definitionEdits_definitionId_definitions_id_fk",
+          "tableFrom": "definitionEdits",
+          "tableTo": "definitions",
+          "columnsFrom": [
+            "definitionId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.jobs": {
+      "name": "jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "jobs_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "termId": {
+          "name": "termId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "definitionId": {
+          "name": "definitionId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "job_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "job_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        }
+      },
+      "indexes": {
+        "unique_jobs": {
+          "name": "unique_jobs",
+          "columns": [
+            {
+              "expression": "termId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"jobs\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "unique_term_creation": {
+          "name": "unique_term_creation",
+          "columns": [
+            {
+              "expression": "termId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"jobs\".\"type\" = 'create'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "jobs_termId_terms_id_fk": {
+          "name": "jobs_termId_terms_id_fk",
+          "tableFrom": "jobs",
+          "tableTo": "terms",
+          "columnsFrom": [
+            "termId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "jobs_definitionId_definitions_id_fk": {
+          "name": "jobs_definitionId_definitions_id_fk",
+          "tableFrom": "jobs",
+          "tableTo": "definitions",
+          "columnsFrom": [
+            "definitionId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "revise_def_id": {
+          "name": "revise_def_id",
+          "value": "(\"jobs\".\"type\" in ('revise') and \"jobs\".\"definitionId\" is not null) or (\"jobs\".\"type\" not in ('revise'))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.tags": {
+      "name": "tags",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "tags_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tagsToTerms": {
+      "name": "tagsToTerms",
+      "schema": "",
+      "columns": {
+        "definitionId": {
+          "name": "definitionId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tagId": {
+          "name": "tagId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tagsToTerms_definitionId_definitions_id_fk": {
+          "name": "tagsToTerms_definitionId_definitions_id_fk",
+          "tableFrom": "tagsToTerms",
+          "tableTo": "definitions",
+          "columnsFrom": [
+            "definitionId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tagsToTerms_tagId_tags_id_fk": {
+          "name": "tagsToTerms_tagId_tags_id_fk",
+          "tableFrom": "tagsToTerms",
+          "tableTo": "tags",
+          "columnsFrom": [
+            "tagId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "tagsToTerms_tagId_definitionId_pk": {
+          "name": "tagsToTerms_tagId_definitionId_pk",
+          "columns": [
+            "tagId",
+            "definitionId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.terms": {
       "name": "terms",
       "schema": "",
@@ -100,12 +574,6 @@
             "cycle": false
           }
         },
-        "authorId": {
-          "name": "authorId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
         "createdAt": {
           "name": "createdAt",
           "type": "timestamp",
@@ -113,49 +581,25 @@
           "notNull": true,
           "default": "now()"
         },
-        "modifiedAt": {
-          "name": "modifiedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
         "term": {
           "name": "term",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "definition": {
-          "name": "definition",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "examples": {
-          "name": "examples",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "terms_authorId_users_id_fk": {
-          "name": "terms_authorId_users_id_fk",
-          "tableFrom": "terms",
-          "tableTo": "users",
-          "columnsFrom": [
-            "authorId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "terms_term_unique": {
+          "name": "terms_term_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "term"
+          ]
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -185,19 +629,40 @@
           "name": "googleId",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "name": {
           "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",
           "type": "varchar(254)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "isAi": {
+          "name": "isAi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "isAdmin": {
+          "name": "isAdmin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "notifications": {
           "name": "notifications",
@@ -227,8 +692,8 @@
       "name": "votes",
       "schema": "",
       "columns": {
-        "termId": {
-          "name": "termId",
+        "definitionId": {
+          "name": "definitionId",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -249,12 +714,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "votes_termId_terms_id_fk": {
-          "name": "votes_termId_terms_id_fk",
+        "votes_definitionId_definitions_id_fk": {
+          "name": "votes_definitionId_definitions_id_fk",
           "tableFrom": "votes",
-          "tableTo": "terms",
+          "tableTo": "definitions",
           "columnsFrom": [
-            "termId"
+            "definitionId"
           ],
           "columnsTo": [
             "id"
@@ -277,10 +742,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "votes_termId_userId_pk": {
-          "name": "votes_termId_userId_pk",
+        "votes_definitionId_userId_pk": {
+          "name": "votes_definitionId_userId_pk",
           "columns": [
-            "termId",
+            "definitionId",
             "userId"
           ]
         }
@@ -292,6 +757,33 @@
     }
   },
   "enums": {
+    "public.chat_type": {
+      "name": "chat_type",
+      "schema": "public",
+      "values": [
+        "system",
+        "user"
+      ]
+    },
+    "public.job_status": {
+      "name": "job_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "in_progress",
+        "succeeded",
+        "failed"
+      ]
+    },
+    "public.job_type": {
+      "name": "job_type",
+      "schema": "public",
+      "values": [
+        "create",
+        "new_example",
+        "revise"
+      ]
+    },
     "public.vote_type": {
       "name": "vote_type",
       "schema": "public",

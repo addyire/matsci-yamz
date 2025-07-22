@@ -1,116 +1,49 @@
-import { z } from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
-import {
-  db,
-  commentsTable,
-  termsTable,
-  usersTable,
-  votesTable,
-} from "@yamz/db";
-import { eq, getTableColumns, sql } from "drizzle-orm";
-import { authenticatedProcedure } from "../procedures";
-import { revalidatePath } from "next/cache";
-import { DefineTermSchema } from "@/lib/schemas/terms";
 import { tagsRouter } from "./tags";
 import { userRouter } from "./user";
+import { definitionsRouter } from "./definitions";
+import { commentsRouter } from "./comments";
+import { adminRouter } from "./admin";
+import { termsRouter } from "./terms";
+import { z } from "zod";
+import { db, definitionsTable, termsTable, usersTable } from "@yamz/db";
+import { desc, eq, ilike, or } from "drizzle-orm";
+import { authenticatedProcedure } from "../procedures";
 
 export const appRouter = createTRPCRouter({
   tags: tagsRouter,
   user: userRouter,
-  terms: {
-    create: authenticatedProcedure
-      .input(DefineTermSchema)
-      .mutation(async ({ ctx: { userId }, input }) => {
-        const [insertedTerm] = await db
-          .insert(termsTable)
-          .values({
-            authorId: userId,
-            ...input,
-          })
-          .returning();
+  definitions: definitionsRouter,
+  terms: termsRouter,
+  comments: commentsRouter,
+  admin: adminRouter,
+  me: authenticatedProcedure.query(async ({ ctx }) => {
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, ctx.userId),
+    });
 
-        revalidatePath("/terms");
-        revalidatePath(`/terms/alternates/${encodeURIComponent(input.term)}`);
+    return user;
+  }),
+  search: baseProcedure.input(z.object({ query: z.string(), limit: z.number().default(10) }).optional()).query(async ({ input }) => {
+    const { query, limit } = input || { query: '', limit: 10 }
 
-        return insertedTerm!;
-      }),
-  },
-  comments: {
-    get: baseProcedure.input(z.number()).query(async ({ input: id }) => {
-      const comments = await db
-        .select({
-          ...getTableColumns(commentsTable),
-          author: {
-            name: usersTable.name,
-          },
-        })
-        .from(commentsTable)
-        .where(eq(commentsTable.termId, id))
-        .innerJoin(usersTable, eq(commentsTable.userId, usersTable.id));
+    console.log(query, limit)
 
-      return comments;
-    }),
-    create: authenticatedProcedure
-      .input(z.object({ id: z.number(), comment: z.string().nonempty() }))
-      .mutation(
-        async ({
-          input: { id: termId, comment: message },
-          ctx: { userId },
-        }) => {
-          const [insertedComment] = await db
-            .insert(commentsTable)
-            .values({
-              termId,
-              userId,
-              message,
-            })
-            .returning();
-
-          return insertedComment;
-        },
-      ),
-  },
-  votes: {
-    get: baseProcedure
-      .input(z.number())
-      .query(async ({ ctx: { session }, input: id }) => {
-        const [score] = await db
-          .select({
-            // calculate the term score
-            score: sql<number>`COALESCE(SUM(CASE WHEN ${votesTable.kind} = 'up' THEN 1 WHEN ${votesTable.kind} = 'down' THEN -1 ELSE 0 END), 0)`,
-            // if the user is logged in, try to find the users vote for this term
-            ...(session.id
-              ? {
-                  userVote: sql<
-                    "up" | "down" | null
-                  >`MAX(CASE WHEN ${votesTable.userId} = ${session.id} THEN ${votesTable.kind} ELSE NULL END)`,
-                }
-              : {}),
-          })
-          .from(votesTable)
-          .where(eq(votesTable.termId, id));
-
-        return score;
-      }),
-    vote: authenticatedProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          vote: z.enum(["up", "down"]),
-        }),
+    const results = await db
+      .select()
+      .from(termsTable)
+      .innerJoin(definitionsTable, eq(termsTable.id, definitionsTable.termId))
+      .where(
+        or(
+          ilike(termsTable.term, `%${query}%`),
+          ilike(definitionsTable.definition, `%${query}%`),
+        ),
       )
-      .mutation(async ({ ctx: { userId }, input: { id, vote } }) => {
-        await db
-          .insert(votesTable)
-          .values({ termId: id, userId, kind: vote })
-          .onConflictDoUpdate({
-            target: [votesTable.termId, votesTable.userId],
-            set: { kind: vote },
-          });
+      .limit(limit)
+      .orderBy(desc(definitionsTable.createdAt));
 
-        revalidatePath(`/terms/${id}`);
-      }),
-  },
+    return results;
+  }),
 });
 
 // export type definition of API

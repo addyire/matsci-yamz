@@ -1,7 +1,14 @@
 import { TermDefinition } from "@/components/term/preview";
 import { Card } from "@/components/ui/card";
-import { db, tagsTable, tagsToTerms, termsTable } from "@yamz/db";
+import {
+  db,
+  definitionsTable,
+  tagsTable,
+  tagsToDefinitions,
+  termsTable,
+} from "@yamz/db";
 import { eq } from "drizzle-orm";
+import Link from "next/link";
 
 export default async function TagPage({
   params,
@@ -17,17 +24,24 @@ export default async function TagPage({
     .limit(1);
   const terms = await db
     .select()
-    .from(tagsToTerms)
-    .innerJoin(termsTable, eq(termsTable.id, tagsToTerms.termId))
-    .where(eq(tagsToTerms.tagId, tagId));
+    .from(tagsToDefinitions)
+    .innerJoin(
+      definitionsTable,
+      eq(definitionsTable.id, tagsToDefinitions.definitionId),
+    )
+    .innerJoin(termsTable, eq(termsTable.id, definitionsTable.termId))
+    .where(eq(tagsToDefinitions.tagId, tagId));
 
   return (
     <main className="max-w-2xl mx-auto w-full">
-      <h1 className="text-2xl font-bold">Terms Tagged with {tag.name}</h1>
+      <h1 className="text-2xl font-bold">Definitions Tagged with {tag.name}</h1>
       {terms.map((t) => (
-        <Card key={t.terms.id}>
-          <TermDefinition term={t.terms} />
-        </Card>
+        <Link key={t.definitions.id} href={`/definition/${t.definitions.id}`}>
+          <Card className="!p-2">
+            <h2 className="text-lg font-semibold">{t.terms.term}</h2>
+            <TermDefinition definition={t.definitions} />
+          </Card>
+        </Link>
       ))}
     </main>
   );

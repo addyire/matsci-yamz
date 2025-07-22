@@ -1,54 +1,38 @@
 "use client";
 
-import type { Term } from "@yamz/db";
+import type { Definition } from "@yamz/db";
 import { lightFormat } from "date-fns";
-import Link from "next/link";
 
 interface Props {
-  term: Term;
+  definition: Definition;
 }
 
-export const TermDefinition = ({ term }: Props) => {
+export const TermDefinition = ({ definition }: Props) => {
   return (
     <section className="flex-1">
       <div>
-        <span className="italic">Term: </span>
-        <Link
-          href={`/terms/${term.id}`}
-          className="text-blue-500 font-semibold"
-        >
-          {term.term}
-        </Link>
-      </div>
-      <div>
         <span className="italic">Definition: </span>
-        {term.definition}
+        {definition.definition}
       </div>
       <div>
-        <span className="italic">Examples: </span>
-        {term.examples}
+        <span className="italic">Example: </span>
+        {definition.example}
       </div>
     </section>
   );
 };
 
-interface MetaDataProps extends Props {
-  author: string;
-}
-
-export const TermMetadata = ({ term }: MetaDataProps) => (
+export const TermMetadata = ({ definition }: Props) => (
   <section>
     <div>
       <span className="italic">Created: </span>
-      {lightFormat(term.createdAt, "yyyy-MM-dd")}
+      {lightFormat(definition.createdAt, "yyyy-MM-dd")}
     </div>
-    <div>
-      <span className="italic">Last Updated: </span>
-      {lightFormat(term.modifiedAt, "yyyy-MM-dd")}
-    </div>
-    {/* <div> */}
-    {/*   <span className="italic">Author: </span> */}
-    {/*   {author} */}
-    {/* </div> */}
+    {definition.updatedAt && (
+      <div>
+        <span className="italic">Last Updated: </span>
+        {lightFormat(definition.updatedAt, "yyyy-MM-dd")}
+      </div>
+    )}
   </section>
 );

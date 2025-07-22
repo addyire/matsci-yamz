@@ -1,79 +1,32 @@
-import { EditTags } from "@/components/tags/selector";
-import { TermTags, TermTagsFallback } from "@/components/tags/tags";
-import { TermCommentBox } from "@/components/term/comment-box";
-import { TermComments } from "@/components/term/comments";
-import { TermMetadata } from "@/components/term/preview";
-import { TermVotes, TermVotesFallback } from "@/components/term/votes";
-import { db, termsTable, usersTable } from "@yamz/db";
-import { getSession } from "@/lib/session";
+import { db, termsTable } from "@yamz/db";
 import { HydrateClient, trpc } from "@/trpc/server";
-import { eq, getTableColumns } from "drizzle-orm";
-import { ArrowLeftIcon } from "lucide-react";
-import Link from "next/link";
-import { Suspense } from "react";
+import { eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { DefinitionList } from "./definitions";
 
-export default async function TermPage(props: {
+export default async function AlternateTermsPage(props: {
   params: Promise<{ termId: string }>;
 }) {
-  const sesh = await getSession();
   const { termId } = await props.params;
 
-  trpc.votes.get.prefetch(Number(termId));
-  trpc.comments.get.prefetch(Number(termId));
-  trpc.tags.get.prefetch({ termId: Number(termId) });
+  const term = await db.query.termsTable.findFirst({
+    where: eq(termsTable.id, Number(termId)),
+  });
 
-  const [term] = await db
-    .select({
-      ...getTableColumns(termsTable),
-      author: {
-        name: usersTable.name,
-      },
-    })
-    .from(termsTable)
-    .where(eq(termsTable.id, Number(termId)))
-    .innerJoin(usersTable, eq(termsTable.authorId, usersTable.id))
-    .limit(1);
+  if (!term) notFound();
+
+  trpc.definitions.list.prefetch({ termId: term.id });
 
   return (
     <HydrateClient>
-      <main className="p-8 space-y-4">
-        <Link
-          className="flex items-center gap-1"
-          href={`/terms/alternates/${term.term}`}
-        >
-          <ArrowLeftIcon className="size-4" />
-          Other definitions for {term.term}
-        </Link>
-        <section className="flex gap-4">
-          <Suspense fallback={<TermVotesFallback />}>
-            <TermVotes id={term.id} />
-          </Suspense>
-          <section className="flex-1">
-            <h1 className="text-4xl font-semibold">{term.term}</h1>
-            <div>
-              <span className="italic">Definition: </span>
-              {term.definition}
-            </div>
-            <div>
-              <span className="italic">Examples: </span>
-              {term.examples}
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="italic">Tags</span>
-              {term.authorId === sesh.id && <EditTags termId={term.id} />}
-            </div>
-            <div className="flex items-center gap-0.5 flex-wrap">
-              <Suspense fallback={<TermTagsFallback />}>
-                <TermTags termId={term.id} />
-              </Suspense>
-            </div>
-          </section>
-          <TermMetadata term={term} author={term.author.name} />
-        </section>
-        <section className="space-y-2">
-          <h2 className="text-xl font-medium">Comments</h2>
-          <TermComments id={term.id} />
-          <TermCommentBox id={term.id} />
+      <main className="px-4 p-8">
+        <section className="max-w-4xl w-full mx-auto">
+          <h1 className="text-4xl font-bold mb-4">
+            Alternate Definitions for {term.term}
+          </h1>
+          <div className="space-y-2">
+            <DefinitionList termId={term.id} />
+          </div>
         </section>
       </main>
     </HydrateClient>
