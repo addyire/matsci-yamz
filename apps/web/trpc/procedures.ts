@@ -1,7 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import { baseProcedure } from "./init";
-import { db, usersTable } from "@yamz/db";
-import { eq } from "drizzle-orm";
 import { GetUser } from "@/lib/crud";
 
 export const authenticatedProcedure = baseProcedure.use((opts) => {

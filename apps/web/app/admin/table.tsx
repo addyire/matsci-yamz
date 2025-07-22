@@ -39,7 +39,7 @@ const columns: ColumnDef<Job>[] = [
       if (!row.original.pending) return null;
 
       const { mutate, isPending } = trpc.admin.run.useMutation({
-        onSuccess: () => table.options.meta.router.refresh(),
+        onSuccess: () => table.options.meta!.router!.refresh(),
       });
 
       return (

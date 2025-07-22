@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-sidebar text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} h-screen antialiased bg-sidebar flex flex-col text-foreground`}
       >
         <TRPCProvider>
           <ThemeProvider
@@ -37,7 +37,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            {children}
+            <div className="flex-1 overflow-auto">{children}</div>
           </ThemeProvider>
         </TRPCProvider>
       </body>
