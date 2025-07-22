@@ -8,6 +8,13 @@
       "when": 1750727695295,
       "tag": "0000_thin_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1753163372601,
+      "tag": "0001_pretty_tattoo",
+      "breakpoints": true
     }
   ]
 }
