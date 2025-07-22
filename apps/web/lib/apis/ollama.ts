@@ -10,7 +10,9 @@ const DefinitionOutput = z.object({
 
 export const LLMSystemPrompt = `You are to define material science terms. Keep definitions concise and don't be conversational, just respond with a definition and an example using the term with the given definition.`;
 
-export const ollama = new Ollama();
+export const ollama = new Ollama({
+  host: process.env.OLLAMA_HOST,
+});
 
 export const runLLM = async (messages: Message[]) => {
   const res = await ollama.chat({
