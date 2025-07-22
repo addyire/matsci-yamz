@@ -1,6 +1,5 @@
 import { Message, Ollama } from "ollama";
 import { z } from "zod";
-import { CreateJob } from "../crud";
 import zodToJsonSchema from "zod-to-json-schema";
 
 type DefinitionOutput = z.infer<typeof DefinitionOutput>;
@@ -10,16 +9,6 @@ const DefinitionOutput = z.object({
 });
 
 export const LLMSystemPrompt = `You are to define material science terms. Keep definitions concise and don't be conversational, just respond with a definition and an example using the term with the given definition.`;
-
-export const LLMCreateDefPrompt = (job: CreateJob) => {
-  let str = `Term: ${job.term.term}\n\nExamples:\n`;
-
-  for (const def of job.term.definitions) {
-    str += ` - ${def.example}`;
-  }
-
-  return str;
-};
 
 export const ollama = new Ollama();
 

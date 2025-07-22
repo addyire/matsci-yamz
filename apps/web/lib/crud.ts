@@ -1,13 +1,9 @@
 import {
-  commentsTable,
   db,
   definitionsTable,
-  editsTable,
-  jobsTable,
   usersTable,
 } from "@yamz/db";
-import { and, asc, eq, sql } from "drizzle-orm";
-import { unionAll } from "drizzle-orm/pg-core";
+import { and, eq } from "drizzle-orm";
 import { cache } from "react";
 
 export const GetUser = cache((userId: number) =>

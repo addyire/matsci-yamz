@@ -39,6 +39,7 @@ const columns: ColumnDef<Job>[] = [
       if (!row.original.pending) return null;
 
       const { mutate, isPending } = trpc.admin.run.useMutation({
+        // @ts-expect-error -----
         onSuccess: () => table.options.meta!.router!.refresh(),
       });
 
@@ -82,9 +83,9 @@ export function JobsTable() {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                   </TableHead>
                 );
               })}
