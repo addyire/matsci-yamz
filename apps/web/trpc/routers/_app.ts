@@ -9,11 +9,13 @@ import { z } from "zod";
 import { db, definitionsTable, termsTable, usersTable } from "@yamz/db";
 import { desc, eq, ilike, or } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
+import { votesRouter } from "./votes";
 
 export const appRouter = createTRPCRouter({
   tags: tagsRouter,
   user: userRouter,
   definitions: definitionsRouter,
+  votes: votesRouter,
   terms: termsRouter,
   comments: commentsRouter,
   admin: adminRouter,
@@ -24,10 +26,14 @@ export const appRouter = createTRPCRouter({
 
     return user;
   }),
+  logout: baseProcedure.mutation(async ({ ctx }) => {
+    ctx.session.destroy()
+    await ctx.session.save()
+
+    return { ok: true }
+  }),
   search: baseProcedure.input(z.object({ query: z.string(), limit: z.number().default(10) }).optional()).query(async ({ input }) => {
     const { query, limit } = input || { query: '', limit: 10 }
-
-    console.log(query, limit)
 
     const results = await db
       .select()

@@ -7,7 +7,7 @@ import {
   definitionsTable,
   chatsTable,
 } from "@yamz/db";
-import { asc, eq, getTableColumns } from "drizzle-orm";
+import { asc, eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
 
 export const commentsRouter = createTRPCRouter({

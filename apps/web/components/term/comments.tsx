@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { trpc } from "@/trpc/client";
 import { Skeleton } from "../ui/skeleton";
 import { Card, CardContent } from "../ui/card";
+import { format } from "date-fns";
 
 interface Props {
   id: number;
@@ -32,7 +33,12 @@ export const TermComments = ({ id }: Props) => {
       {comments.map((comment) => (
         <Card key={comment.id}>
           <CardContent>
-            <span className="italic">{comment.author.name}</span>
+            <section>
+              <p>{comment.author.name}
+                <a className="text-xs"> at {format(comment.createdAt, 'MM/dd/yyyy h:mmaaa')}</a>
+              </p>
+
+            </section>
             <p>{comment.message}</p>
           </CardContent>
         </Card>

@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "../ui/textarea";
 import { trpc } from "@/trpc/client";
+import Link from "next/link";
+import { toast } from "sonner";
 
 const commentSchema = z.object({
   message: z.string().nonempty({ message: "Comment cannot be empty" }),
@@ -36,6 +38,10 @@ export function TermCommentBox({ id }: { id: number }) {
 
       utils.comments.get.refetch(id);
     },
+    onError: () => toast("You must be logged in to comment!", {
+      action: <Link href="/api/login" className="ml-auto"><Button>Login</Button></Link>,
+      position: 'top-center'
+    })
   });
 
   return (

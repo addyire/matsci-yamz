@@ -2,9 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/trpc/client";
+import { useRouter } from "next/navigation";
 
 export const RunButton = ({ termId }: { termId: number }) => {
-  const { mutate, isPending } = trpc.admin.run.useMutation();
+  const router = useRouter()
+
+  const { mutate, isPending } = trpc.admin.run.useMutation({
+    onSuccess: () => router.refresh()
+  });
 
   return (
     <Button

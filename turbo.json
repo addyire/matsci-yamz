@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "ui": "stream",
+  "ui": "tui",
   "envMode": "loose",
   "tasks": {
     "start": {"cache": false},
@@ -9,6 +9,11 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
+    "db:migrate": {"cache": false},
+    "db:push": {"cache": false, "interactive": true},
+    "db:drop": {"cache": false, "interactive": true},
+    "db:generate": {"cache": false},
+    "db:studio": {"cache": false},
     "lint": {
       "dependsOn": ["^lint"]
     },

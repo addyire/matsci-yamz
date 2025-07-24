@@ -72,7 +72,7 @@ export function JobsTable() {
   });
 
   return (
-    <Card className="bg-secondary !py-0">
+    <Card className="bg-card !py-0">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

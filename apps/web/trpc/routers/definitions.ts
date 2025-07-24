@@ -6,8 +6,8 @@ import {
   votesTable,
   definitionsTable,
   editsTable,
-  jobsTable,
   chatsTable,
+  usersTable,
 } from "@yamz/db";
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
@@ -43,12 +43,6 @@ export const definitionsRouter = createTRPCRouter({
             message: `<term>\n${term}\n<example>\n${input.examples}`,
             termId: insertedTerm.id,
           });
-
-          // create job for LLM
-          await tx
-            .insert(jobsTable)
-            .values({ termId: insertedTerm.id, type: "create" })
-            .onConflictDoNothing(); // dont if a create job already exists
 
           dbTerm = insertedTerm;
         }
@@ -119,13 +113,15 @@ export const definitionsRouter = createTRPCRouter({
         .select({
           ...getTableColumns(definitionsTable),
           term: termsTable.term,
+          isAi: usersTable.isAi,
           vote: userId
             ? sql<"up" | "down" | null>`${votesTable.kind}`.as("vote")
             : sql<"up" | "down" | null>`null`.as("vote"),
         })
         .from(definitionsTable)
         .where(eq(definitionsTable.id, definitionId))
-        .innerJoin(termsTable, eq(termsTable.id, definitionsTable.termId));
+        .innerJoin(termsTable, eq(termsTable.id, definitionsTable.termId))
+        .innerJoin(usersTable, eq(usersTable.id, definitionsTable.authorId));
 
       if (userId)
         definitionsQuery.leftJoin(

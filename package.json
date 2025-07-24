@@ -2,16 +2,23 @@
   "name": "yamz-monorepo",
   "private": true,
   "scripts": {
-    "start": "turbo run start",
-    "build": "turbo run build",
-    "dev": "turbo run dev",
+    "start": "dotenv -- turbo run start",
+    "build": "dotenv -- turbo run build",
+    "dev": "dotenv -- turbo run dev",
+    "db:migrate": "dotenv -- turbo run db:migrate",
+    "db:push": "dotenv -- turbo run db:push",
+    "db:drop": "dotenv -- turbo run db:drop",
+    "db:generate": "dotenv -- turbo run db:generate",
+    "db:studio": "dotenv -- turbo run db:studio",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
     "@eslint/js": "^9.29.0",
+    "dotenv": "^16.5.0",
+    "dotenv-cli": "^7.4.4",
+    "prettier": "^3.5.3",
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
   },

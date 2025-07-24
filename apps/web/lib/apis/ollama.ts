@@ -10,13 +10,15 @@ const DefinitionOutput = z.object({
 
 export const LLMSystemPrompt = `You are to define material science terms. Keep definitions concise and don't be conversational, just respond with a definition and an example using the term with the given definition.`;
 
+export const OllamaModel = 'gemma3'
+
 export const ollama = new Ollama({
   host: process.env.OLLAMA_HOST,
 });
 
 export const runLLM = async (messages: Message[]) => {
   const res = await ollama.chat({
-    model: "gemma3",
+    model: OllamaModel,
     messages: [{ role: "system", content: LLMSystemPrompt }, ...messages],
     format: zodToJsonSchema(DefinitionOutput),
     // Make's sure model doesn't stop running until 5 seconds after our last request

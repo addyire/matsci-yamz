@@ -15,6 +15,7 @@ import { Button } from "./ui/button";
 import {
   UserCircleIcon,
 } from "lucide-react";
+import { LogoutButton } from "./logout";
 
 export const Header = () => {
   return (
@@ -57,18 +58,17 @@ const AuthSection = async () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {/* <DropdownMenuLabel>{user.name}</DropdownMenuLabel> */}
-          {/* <DropdownMenuSeparator /> */}
+          {user.isAdmin &&
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                Admin Page
+              </Link>
+            </DropdownMenuItem>
+          }
           <DropdownMenuItem>
-            {/* <SettingsIcon className="size-4" /> */}
             Edit Profile
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="text-red-500">
-            <Link href="/api/auth/logout">
-              {/* <LogOutIcon className="size-4 text-red-500" /> */}
-              Logout
-            </Link>
-          </DropdownMenuItem>
+          <LogoutButton />
         </DropdownMenuContent>
       </DropdownMenu>
     );

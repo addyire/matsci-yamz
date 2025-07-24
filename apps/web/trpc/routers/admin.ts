@@ -1,13 +1,18 @@
 import { chatsTable, db, termsTable } from "@yamz/db";
 import { createTRPCRouter } from "../init";
 import { adminProcedure } from "../procedures";
-import { runLLM } from "@/lib/apis/ollama";
+import { ollama, OllamaModel, runLLM } from "@/lib/apis/ollama";
 import { z } from "zod";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { UpsertAIDefinition } from "@/lib/crud";
 import { revalidatePath } from "next/cache";
 
 export const adminRouter = createTRPCRouter({
+  ollama: adminProcedure.query(async () => {
+    const x = await ollama.show({ model: OllamaModel })
+
+    return x
+  }),
   chats: adminProcedure.input(z.number()).query(async ({ input: termId }) => {
     return await db.query.chatsTable.findMany({
       where: eq(chatsTable.termId, termId),

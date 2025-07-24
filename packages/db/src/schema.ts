@@ -59,7 +59,7 @@ export const definitionsTable = pgTable(
     definition: text().notNull(),
     example: text().notNull(),
     score: integer().notNull().default(0),
-    createdAt: timestamp().defaultNow().notNull(),
+    createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
     updatedAt: timestamp().$onUpdateFn(() => new Date()),
   },
   (table) => [unique().on(table.authorId, table.termId)],
@@ -141,7 +141,7 @@ export const commentsTable = pgTable("comments", {
     .references(() => usersTable.id)
     .notNull(),
   message: text().notNull(),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
 });
 
 export const commentsTableRelations = relations(commentsTable, ({ one }) => ({
@@ -190,61 +190,6 @@ export const tagsToTermsRelations = relations(tagsToDefinitions, ({ one }) => ({
   }),
 }));
 
-// --- JOBS ---
-
-export const jobStatusEnum = pgEnum("job_status", [
-  "pending",
-  "in_progress",
-  "succeeded",
-  "failed",
-]);
-
-export const jobTypeEnum = pgEnum("job_type", [
-  "create",
-  "new_example",
-  "revise",
-]);
-
-export type Job = typeof jobsTable.$inferSelect;
-export const jobsTable = pgTable(
-  "jobs",
-  {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    termId: integer()
-      .references(() => termsTable.id)
-      .notNull(),
-    definitionId: integer().references(() => definitionsTable.id),
-    type: jobTypeEnum().notNull(),
-    status: jobStatusEnum().notNull().default("pending"),
-  },
-  (table) => [
-    // index to ensure each term only has one pending job
-    uniqueIndex("unique_jobs")
-      .on(table.termId)
-      .where(sql`${table.status} = 'pending'`),
-    // index to ensure each term only gets one ai definition
-    uniqueIndex("unique_term_creation")
-      .on(table.termId)
-      .where(sql`${table.type} = 'create'`),
-    // check to ensure if job type is revise, the definitionId is set
-    check(
-      "revise_def_id",
-      sql`(${table.type} in ('revise') and ${table.definitionId} is not null) or (${table.type} not in ('revise'))`,
-    ),
-  ],
-);
-
-export const jobsTableRelations = relations(jobsTable, ({ one }) => ({
-  term: one(termsTable, {
-    fields: [jobsTable.termId],
-    references: [termsTable.id],
-  }),
-  definition: one(definitionsTable, {
-    fields: [jobsTable.definitionId],
-    references: [definitionsTable.id],
-  }),
-}));
-
 export const chatTypeEnum = pgEnum("chat_type", ["system", "user"]);
 
 export const chatsTable = pgTable("chats", {
@@ -254,7 +199,7 @@ export const chatsTable = pgTable("chats", {
     .notNull(),
   role: chatTypeEnum().notNull(),
   message: text().notNull(),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
 });
 
 export const chatsTableRelations = relations(chatsTable, ({ one }) => ({

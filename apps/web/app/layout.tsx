@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TRPCProvider } from "@/trpc/client";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} h-screen antialiased bg-sidebar flex flex-col text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} h-screen antialiased bg-primary-foreground flex flex-col text-foreground`}
       >
         <TRPCProvider>
           <ThemeProvider
@@ -38,6 +39,7 @@ export default function RootLayout({
           >
             <Header />
             <div className="flex-1 overflow-auto">{children}</div>
+            <Toaster />
           </ThemeProvider>
         </TRPCProvider>
       </body>

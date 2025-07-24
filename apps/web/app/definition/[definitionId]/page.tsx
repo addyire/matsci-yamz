@@ -7,7 +7,7 @@ import { TermVotes } from "@/components/term/votes";
 import { getSession } from "@/lib/session";
 import { HydrateClient, trpc } from "@/trpc/server";
 import { lightFormat } from "date-fns";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, SparklesIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -19,6 +19,7 @@ export default async function TermPage(props: {
 
   trpc.comments.get.prefetch(Number(definitionId));
   trpc.tags.get.prefetch({ definitionId: Number(definitionId) });
+  trpc.votes.get.prefetch({ definitionId: Number(definitionId) })
 
   const definition = await trpc.definitions.get({
     definitionId: Number(definitionId),
@@ -68,14 +69,19 @@ export default async function TermPage(props: {
                 definitionId={definition.id}
               />
             )}
+            {definition.isAi &&
+              <div className="text-blue-500 flex items-center">
+                <SparklesIcon className="size-4 mr-2" />AI Generated Definition
+              </div>
+            }
             <div>
               <span className="italic">Created: </span>
-              {lightFormat(definition.createdAt, "yyyy-MM-dd")}
+              {lightFormat(definition.createdAt, "yyyy/MM/dd")}
             </div>
             {definition.updatedAt && (
               <div>
                 <span className="italic">Last Updated: </span>
-                {lightFormat(definition.updatedAt, "yyyy-MM-dd")}
+                {lightFormat(definition.updatedAt, "yyyy/MM/dd")}
               </div>
             )}
           </section>
