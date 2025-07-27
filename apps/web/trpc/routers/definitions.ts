@@ -136,6 +136,15 @@ export const definitionsRouter = createTRPCRouter({
 
       return def;
     }),
+  mine: authenticatedProcedure.query(async ({ ctx: { userId } }) => {
+    const definitionsQuery = db.query.definitionsTable.findMany({
+      where: eq(definitionsTable.authorId, userId),
+      with: { term: true },
+      orderBy: desc(definitionsTable.createdAt),
+    });
+
+    return await definitionsQuery;
+  }),
   list: baseProcedure
     .input(z.object({ termId: z.number() }))
     .query(async ({ ctx: { userId }, input: { termId } }) => {
@@ -147,7 +156,7 @@ export const definitionsRouter = createTRPCRouter({
             : sql<"up" | "down" | null>`null`.as("vote"),
         })
         .from(definitionsTable)
-        .where(eq(definitionsTable.termId, termId))
+        .where(and(eq(definitionsTable.termId, termId)))
         .orderBy(desc(definitionsTable.score));
 
       if (userId)

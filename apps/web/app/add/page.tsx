@@ -1,14 +1,10 @@
-import { getSession } from "@/lib/session";
-import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { DefineTermForm } from "./form";
 import { HydrateClient, trpc } from "@/trpc/server";
 
 export default async function AddTermPage() {
-  // Get session and return to homepage if they aren't authenticated
-  const sesh = await getSession();
-  if (!sesh.id) redirect("/");
-
-  trpc.terms.list.prefetch(undefined);
+  await auth();
+  await trpc.terms.list.prefetch(undefined);
 
   return (
     <HydrateClient>

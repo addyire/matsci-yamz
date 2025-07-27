@@ -59,8 +59,10 @@ export const definitionsTable = pgTable(
     definition: text().notNull(),
     example: text().notNull(),
     score: integer().notNull().default(0),
-    createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
-    updatedAt: timestamp().$onUpdateFn(() => new Date()),
+    createdAt: timestamp({ mode: "string", withTimezone: true })
+      .default(sql`now()`)
+      .notNull(),
+    updatedAt: timestamp({ mode: "string" }).$onUpdateFn(() => sql`now()`),
   },
   (table) => [unique().on(table.authorId, table.termId)],
 );
@@ -141,7 +143,9 @@ export const commentsTable = pgTable("comments", {
     .references(() => usersTable.id)
     .notNull(),
   message: text().notNull(),
-  createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
+  createdAt: timestamp({ mode: "string", withTimezone: true })
+    .default(sql`now()`)
+    .notNull(),
 });
 
 export const commentsTableRelations = relations(commentsTable, ({ one }) => ({
@@ -199,7 +203,9 @@ export const chatsTable = pgTable("chats", {
     .notNull(),
   role: chatTypeEnum().notNull(),
   message: text().notNull(),
-  createdAt: timestamp({ mode: 'string', withTimezone: true }).default(sql`now()`).notNull(),
+  createdAt: timestamp({ mode: "string", withTimezone: true })
+    .default(sql`now()`)
+    .notNull(),
 });
 
 export const chatsTableRelations = relations(chatsTable, ({ one }) => ({

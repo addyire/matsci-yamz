@@ -1,5 +1,6 @@
 "use client";
 
+import { Definition } from "@/components/definition";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/trpc/client";
@@ -9,9 +10,12 @@ import { useState } from "react";
 export default function SearchPage() {
   const [query, setQuery] = useState("");
 
-  const { data } = trpc.search.useQuery({ query, limit: 10 }, {
-    placeholderData: (old) => old,
-  });
+  const { data } = trpc.search.useQuery(
+    { query, limit: 10 },
+    {
+      placeholderData: (old) => old,
+    },
+  );
 
   return (
     <main className="max-w-4xl w-full mx-auto p-4 space-y-4">
@@ -26,12 +30,12 @@ export default function SearchPage() {
       </section>
       <section className="flex flex-col gap-2">
         {data?.map((result) => (
-          <Card
+          <Definition
+            definition={result.definitions}
             key={result.definitions.id}
-            className="p-2 !gap-0">
-            <h1 className="font-medium text-lg">{result.terms.term}</h1>
-            <p>{result.definitions.definition}</p>
-          </Card>
+          >
+            <h1 className="text-2xl font-semibold">{result.terms.term}</h1>
+          </Definition>
         ))}
       </section>
     </main>

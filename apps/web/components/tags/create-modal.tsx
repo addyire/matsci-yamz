@@ -15,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/trpc/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function TagModal() {
-  const router = useRouter()
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tagName, setTagName] = useState("");
 
@@ -26,8 +27,9 @@ export function TagModal() {
       setOpen(false);
       setTagName("");
 
-      router.refresh()
+      router.refresh();
     },
+    onError: () => toast.error("You must be logged in to create a tag"),
   });
 
   const handleSubmit = (e: React.FormEvent) => {

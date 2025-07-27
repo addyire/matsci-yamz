@@ -8,13 +8,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Suspense } from "react";
 import { Button } from "./ui/button";
-import {
-  UserCircleIcon,
-} from "lucide-react";
+import { UserCircleIcon } from "lucide-react";
 import { LogoutButton } from "./logout";
 
 export const Header = () => {
@@ -58,16 +57,21 @@ const AuthSection = async () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {user.isAdmin &&
-            <DropdownMenuItem asChild>
-              <Link href="/admin">
-                Admin Page
-              </Link>
-            </DropdownMenuItem>
-          }
-          <DropdownMenuItem>
-            Edit Profile
-          </DropdownMenuItem>
+          {user.isAdmin && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/admin">Admin Page</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <Link href="/profile">
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+          </Link>
+          <Link href="/profile/terms">
+            <DropdownMenuItem>Definitions</DropdownMenuItem>
+          </Link>
+          <DropdownMenuSeparator />
           <LogoutButton />
         </DropdownMenuContent>
       </DropdownMenu>

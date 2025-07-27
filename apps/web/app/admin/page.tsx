@@ -1,12 +1,12 @@
 import { HydrateClient, trpc } from "@/trpc/server";
 import { JobsTable } from "./table";
-import { auth } from "@/lib/auth"
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { TestOllama } from "./ollama";
 
 export default async function AdminPage() {
-  const { user } = await auth()
-  if (!user?.isAdmin) redirect('/')
+  const { user } = await auth();
+  if (!user?.isAdmin) redirect("/");
 
   await trpc.admin.terms.prefetch();
   await trpc.admin.ollama.prefetch();
