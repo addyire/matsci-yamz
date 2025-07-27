@@ -1,7 +1,6 @@
 "use client";
 
 import { Definition } from "@/components/definition";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/trpc/client";
 import { SearchIcon } from "lucide-react";
