@@ -7,8 +7,9 @@ import {
   definitionsTable,
   chatsTable,
 } from "@yamz/db";
-import { asc, eq, getTableColumns, sql } from "drizzle-orm";
+import { asc, eq, getTableColumns } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
+import { reviseDefinition } from "@/lib/apis/ollama";
 
 export const commentsRouter = createTRPCRouter({
   get: baseProcedure.input(z.number()).query(async ({ input: id }) => {
@@ -52,12 +53,17 @@ export const commentsRouter = createTRPCRouter({
           .limit(1);
 
         // if ai made, create feedback chat
-        if (definition.isAi)
+        if (definition.isAi) {
+
           await tx.insert(chatsTable).values({
             role: "user",
             message: `<feedback>\n${comment}`,
             termId: definition.termId,
           });
+
+          // Revise our definition with the new comment
+          reviseDefinition(definition.termId)
+        }
 
         return insertedComment;
       });

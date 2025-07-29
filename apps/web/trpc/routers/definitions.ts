@@ -12,6 +12,7 @@ import {
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { authenticatedProcedure } from "../procedures";
 import { revalidatePath } from "next/cache";
+import { reviseDefinition } from "@/lib/apis/ollama";
 
 export const definitionsRouter = createTRPCRouter({
   create: authenticatedProcedure
@@ -43,6 +44,9 @@ export const definitionsRouter = createTRPCRouter({
             message: `<term>\n${term}\n<example>\n${input.examples}`,
             termId: insertedTerm.id,
           });
+
+          // Automatically create AI definition on new term creation
+          reviseDefinition(insertedTerm.id)
 
           dbTerm = insertedTerm;
         }

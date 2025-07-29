@@ -1,6 +1,9 @@
+import { chatsTable, db } from "@yamz/db";
+import { asc, eq } from "drizzle-orm";
 import { Message, Ollama } from "ollama";
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import { UpsertAIDefinition } from "../crud";
 
 type DefinitionOutput = z.infer<typeof DefinitionOutput>;
 const DefinitionOutput = z.object({
@@ -36,3 +39,32 @@ export const runLLM = async (messages: Message[]) => {
     console.error("Model returned an invalid response", err);
   }
 };
+
+export const reviseDefinition = async (termId: number) => {
+  const chats = await db.query.chatsTable.findMany({
+    where: eq(chatsTable.termId, termId),
+    orderBy: asc(chatsTable.createdAt),
+  });
+
+  const lastChat = chats[chats.length - 1];
+  if (lastChat.role !== "user") throw new Error("Last message was not created by the AI"); // dont run if last message was from ai
+
+  const result = await runLLM(
+    chats.map((chat) => ({ role: chat.role, content: chat.message })),
+  );
+  if (!result) throw new Error("Something went wrong");
+
+  await UpsertAIDefinition(termId, result);
+
+  const [insertedChat] = await db
+    .insert(chatsTable)
+    .values({
+      role: "system",
+      message: `<definition>\n${result?.definition}\n\n<example>\n${result.example}`,
+      termId,
+    })
+    .returning();
+
+  return { result, insertedChat }
+
+}
