@@ -10,7 +10,7 @@ export default async function AdminPage() {
   if (!user?.isAdmin) redirect("/");
 
   await trpc.admin.terms.prefetch();
-  await trpc.admin.ollama.prefetch();
+  void trpc.admin.ollama.prefetch();
 
   return (
     <HydrateClient>
