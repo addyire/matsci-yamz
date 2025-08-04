@@ -1,17 +1,17 @@
 import { chatsTable, db, termsTable } from "@yamz/db";
 import { createTRPCRouter } from "../init";
 import { adminProcedure } from "../procedures";
-import { ollama, OllamaModel, reviseDefinition, runLLM } from "@/lib/apis/ollama";
+import { ollama, OllamaModel, reviseDefinition } from "@/lib/apis/ollama";
 import { z } from "zod";
-import { asc, desc, eq, sql } from "drizzle-orm";
-import { UpsertAIDefinition } from "@/lib/crud";
-import { revalidatePath } from "next/cache";
+import { desc, eq, sql } from "drizzle-orm";
 
 export const adminRouter = createTRPCRouter({
   ollama: adminProcedure.query(async () => {
-    const x = await ollama.show({ model: OllamaModel })
+    const response = await ollama.show({ model: OllamaModel })
+      .then(model => ({ ok: true as const, model }))
+      .catch(err => ({ ok: false as const, message: String(err) }))
 
-    return x
+    return response
   }),
   chats: adminProcedure.input(z.number()).query(async ({ input: termId }) => {
     return await db.query.chatsTable.findMany({

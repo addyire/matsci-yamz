@@ -3,6 +3,7 @@ import { JobsTable } from "./table";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { TestOllama } from "./ollama";
+import { Suspense } from "react";
 
 export default async function AdminPage() {
   const { user } = await auth();
@@ -14,7 +15,9 @@ export default async function AdminPage() {
   return (
     <HydrateClient>
       <main className="max-w-2xl w-full mx-auto my-4 space-y-2">
-        <TestOllama />
+        <Suspense fallback={null}>
+          <TestOllama />
+        </Suspense>
         <h1 className="text-4xl font-semibold">Terms</h1>
         <JobsTable />
       </main>

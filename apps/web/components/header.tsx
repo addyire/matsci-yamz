@@ -18,7 +18,7 @@ import { LogoutButton } from "./logout";
 
 export const Header = () => {
   return (
-    <header className="flex items-center gap-4 p-2 bg-background border-b border-border">
+    <header className="flex items-center gap-2 sm:gap-4 p-2 bg-background border-b border-border whitespace-nowrap">
       <Link href="/" className="font-bold">
         MatSci YAMZ
       </Link>
@@ -28,9 +28,11 @@ export const Header = () => {
         <Link href="/add">Add</Link>
         <Link href="/tags">Tags</Link>
       </div>
-      <div className="flex-1" />
+      <div className="flex-1 min-w-0" />
       <div className="flex gap-2">
+
         <ThemeToggle />
+
         <Suspense fallback={null}>
           <AuthSection />
         </Suspense>
@@ -53,7 +55,9 @@ const AuthSection = async () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline">
             <UserCircleIcon className="size-4" />
-            {user.name}
+            <a className="hidden sm:block">
+              {user.name}
+            </a>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
