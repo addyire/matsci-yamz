@@ -46,7 +46,7 @@ export const definitionsRouter = createTRPCRouter({
           });
 
           // Automatically create AI definition on new term creation
-          reviseDefinition(insertedTerm.id)
+          reviseDefinition(insertedTerm.id);
 
           dbTerm = insertedTerm;
         }
@@ -116,8 +116,11 @@ export const definitionsRouter = createTRPCRouter({
       const definitionsQuery = db
         .select({
           ...getTableColumns(definitionsTable),
+          author: {
+            name: usersTable.name,
+            isAi: usersTable.isAi,
+          },
           term: termsTable.term,
-          isAi: usersTable.isAi,
           vote: userId
             ? sql<"up" | "down" | null>`${votesTable.kind}`.as("vote")
             : sql<"up" | "down" | null>`null`.as("vote"),

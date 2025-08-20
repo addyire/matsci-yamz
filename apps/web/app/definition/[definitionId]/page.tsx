@@ -19,7 +19,7 @@ export default async function TermPage(props: {
 
   trpc.comments.get.prefetch(Number(definitionId));
   trpc.tags.get.prefetch({ definitionId: Number(definitionId) });
-  trpc.votes.get.prefetch({ definitionId: Number(definitionId) })
+  trpc.votes.get.prefetch({ definitionId: Number(definitionId) });
 
   const definition = await trpc.definitions.get({
     definitionId: Number(definitionId),
@@ -69,11 +69,17 @@ export default async function TermPage(props: {
                 definitionId={definition.id}
               />
             )}
-            {definition.isAi &&
+            {definition.author.isAi ? (
               <div className="text-blue-500 flex items-center">
-                <SparklesIcon className="size-4 mr-2" />AI Generated Definition
+                <SparklesIcon className="size-4 mr-2" />
+                AI Generated Definition
               </div>
-            }
+            ) : (
+              <div>
+                <span className="italic">Author: </span>
+                {definition.author.name}
+              </div>
+            )}
             <div>
               <span className="italic">Created: </span>
               {lightFormat(definition.createdAt, "yyyy/MM/dd")}
