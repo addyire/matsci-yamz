@@ -1,29 +1,38 @@
-import { EditDefinitionDialog } from "@/components/definition/edit-dialog";
-import { EditTags } from "@/components/tags/selector";
-import { TermTags, TermTagsFallback } from "@/components/tags/tags";
-import { TermCommentBox } from "@/components/term/comment-box";
-import { TermComments } from "@/components/term/comments";
-import { TermVotes } from "@/components/term/votes";
-import { getSession } from "@/lib/session";
-import { HydrateClient, trpc } from "@/trpc/server";
-import { lightFormat } from "date-fns";
-import { ArrowLeftIcon, SparklesIcon } from "lucide-react";
-import Link from "next/link";
-import { Suspense } from "react";
+import { EditDefinitionDialog } from "@/components/definition/edit-dialog"
+import { EditTags } from "@/components/tags/selector"
+import { TermTags, TermTagsFallback } from "@/components/tags/tags"
+import { TermCommentBox } from "@/components/term/comment-box"
+import { TermComments } from "@/components/term/comments"
+import { TermVotes } from "@/components/term/votes"
+import { HydrateClient, trpc } from "@/trpc/server"
+import { lightFormat } from "date-fns"
+import { ArrowLeftIcon, SparklesIcon } from "lucide-react"
+import Link from "next/link"
+import { Suspense } from "react"
+import { DeleteDefinitionButton } from "./delete-button"
+import { getSession } from "@/lib/session"
+import { db, User, usersTable } from "@/drizzle"
+import { eq } from "drizzle-orm"
 
 export default async function TermPage(props: {
-  params: Promise<{ definitionId: string }>;
+  params: Promise<{ definitionId: string }>
 }) {
-  const sesh = await getSession();
-  const { definitionId } = await props.params;
+  const sesh = await getSession()
+  const { definitionId } = await props.params
 
-  trpc.comments.get.prefetch(Number(definitionId));
-  trpc.tags.get.prefetch({ definitionId: Number(definitionId) });
-  trpc.votes.get.prefetch({ definitionId: Number(definitionId) });
+  trpc.comments.get.prefetch(Number(definitionId))
+  trpc.tags.get.prefetch({ definitionId: Number(definitionId) })
+  trpc.votes.get.prefetch({ definitionId: Number(definitionId) })
 
   const definition = await trpc.definitions.get({
-    definitionId: Number(definitionId),
-  });
+    definitionId: Number(definitionId)
+  })
+
+  let user: User | undefined = undefined
+  if (sesh.id)
+    user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, sesh.id)
+    })
 
   return (
     <HydrateClient>
@@ -63,12 +72,15 @@ export default async function TermPage(props: {
             </div>
           </section>
           <section className="flex flex-col items-end">
-            {definition.authorId === sesh.id && (
-              <EditDefinitionDialog
-                defaultValues={definition}
-                definitionId={definition.id}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              {user?.isAdmin && <DeleteDefinitionButton id={definition.id} />}
+              {definition.authorId === sesh.id && (
+                <EditDefinitionDialog
+                  defaultValues={definition}
+                  definitionId={definition.id}
+                />
+              )}
+            </div>
             {definition.author.isAi ? (
               <div className="text-blue-500 flex items-center">
                 <SparklesIcon className="size-4 mr-2" />
@@ -99,5 +111,5 @@ export default async function TermPage(props: {
         </section>
       </main>
     </HydrateClient>
-  );
+  )
 }

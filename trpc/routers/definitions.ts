@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { baseProcedure, createTRPCRouter } from "../init";
+import { z } from "zod"
+import { baseProcedure, createTRPCRouter } from "../init"
 import {
   db,
   termsTable,
@@ -8,11 +8,12 @@ import {
   editsTable,
   chatsTable,
   usersTable,
-} from "@yamz/db";
-import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
-import { authenticatedProcedure } from "../procedures";
-import { revalidatePath } from "next/cache";
-import { reviseDefinition } from "@/lib/apis/ollama";
+  commentsTable
+} from "@yamz/db"
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm"
+import { adminProcedure, authenticatedProcedure } from "../procedures"
+import { revalidatePath } from "next/cache"
+import { reviseDefinition } from "@/lib/apis/ollama"
 
 export const definitionsRouter = createTRPCRouter({
   create: authenticatedProcedure
@@ -20,35 +21,35 @@ export const definitionsRouter = createTRPCRouter({
       z.object({
         term: z.string().nonempty("Term is required"),
         definition: z.string().nonempty("You must give a definition"),
-        examples: z.string().nonempty("You must give an example"),
-      }),
+        examples: z.string().nonempty("You must give an example")
+      })
     )
     .mutation(async ({ ctx: { userId: authorId }, input }) => {
       const { term, definition } = await db.transaction(async (tx) => {
         // normalize the term
-        const term = input.term.trim().toLowerCase();
+        const term = input.term.trim().toLowerCase()
 
         let dbTerm = await tx.query.termsTable.findFirst({
-          where: eq(termsTable.term, term),
-        });
+          where: eq(termsTable.term, term)
+        })
         if (!dbTerm) {
           //first time term has been defined, so create it
           const [insertedTerm] = await tx
             .insert(termsTable)
             .values({ term })
-            .returning();
+            .returning()
 
           // insert the ai chat
           await tx.insert(chatsTable).values({
             role: "user",
             message: `<term>\n${term}\n<example>\n${input.examples}`,
-            termId: insertedTerm.id,
-          });
+            termId: insertedTerm.id
+          })
 
           // Automatically create AI definition on new term creation
-          reviseDefinition(insertedTerm.id);
+          reviseDefinition(insertedTerm.id)
 
-          dbTerm = insertedTerm;
+          dbTerm = insertedTerm
         }
 
         const [insertedDefinition] = await tx
@@ -57,58 +58,58 @@ export const definitionsRouter = createTRPCRouter({
             termId: dbTerm.id,
             authorId,
             definition: input.definition,
-            example: input.examples,
+            example: input.examples
           })
-          .returning();
+          .returning()
 
-        return { term: dbTerm, definition: insertedDefinition };
-      });
+        return { term: dbTerm, definition: insertedDefinition }
+      })
 
-      revalidatePath("/terms");
-      revalidatePath(`/terms/${term.id}`);
+      revalidatePath("/terms")
+      revalidatePath(`/terms/${term.id}`)
 
-      return { term, definition };
+      return { term, definition }
     }),
   edit: authenticatedProcedure
     .input(
       z.object({
         id: z.number(),
         definition: z.string(),
-        example: z.string(),
-      }),
+        example: z.string()
+      })
     )
     .mutation(
       async ({ ctx: { userId }, input: { id, definition, example } }) => {
         const res = await db.transaction(async (tx) => {
           const where = and(
             eq(definitionsTable.authorId, userId),
-            eq(definitionsTable.id, id),
-          );
+            eq(definitionsTable.id, id)
+          )
 
           // find the old definition
           const def = await db.query.definitionsTable.findFirst({
-            where,
-          });
+            where
+          })
 
-          if (!def) throw new Error("Definition doesn't exist");
+          if (!def) throw new Error("Definition doesn't exist")
 
           // update it
           const [updatedDef] = await tx
             .update(definitionsTable)
             .set({ definition, example })
             .where(where)
-            .returning();
+            .returning()
 
           await db.insert(editsTable).values({
             definitionId: def.id,
-            definition: def.definition,
-          });
+            definition: def.definition
+          })
 
-          return updatedDef;
-        });
+          return updatedDef
+        })
 
-        return res;
-      },
+        return res
+      }
     ),
   get: baseProcedure
     .input(z.object({ definitionId: z.number() }))
@@ -118,39 +119,39 @@ export const definitionsRouter = createTRPCRouter({
           ...getTableColumns(definitionsTable),
           author: {
             name: usersTable.name,
-            isAi: usersTable.isAi,
+            isAi: usersTable.isAi
           },
           term: termsTable.term,
           vote: userId
             ? sql<"up" | "down" | null>`${votesTable.kind}`.as("vote")
-            : sql<"up" | "down" | null>`null`.as("vote"),
+            : sql<"up" | "down" | null>`null`.as("vote")
         })
         .from(definitionsTable)
         .where(eq(definitionsTable.id, definitionId))
         .innerJoin(termsTable, eq(termsTable.id, definitionsTable.termId))
-        .innerJoin(usersTable, eq(usersTable.id, definitionsTable.authorId));
+        .innerJoin(usersTable, eq(usersTable.id, definitionsTable.authorId))
 
       if (userId)
         definitionsQuery.leftJoin(
           votesTable,
           and(
             eq(votesTable.userId, userId),
-            eq(votesTable.definitionId, definitionsTable.id),
-          ),
-        );
+            eq(votesTable.definitionId, definitionsTable.id)
+          )
+        )
 
-      const [def] = await definitionsQuery;
+      const [def] = await definitionsQuery
 
-      return def;
+      return def
     }),
   mine: authenticatedProcedure.query(async ({ ctx: { userId } }) => {
     const definitionsQuery = db.query.definitionsTable.findMany({
       where: eq(definitionsTable.authorId, userId),
       with: { term: true },
-      orderBy: desc(definitionsTable.createdAt),
-    });
+      orderBy: desc(definitionsTable.createdAt)
+    })
 
-    return await definitionsQuery;
+    return await definitionsQuery
   }),
   list: baseProcedure
     .input(z.object({ termId: z.number() }))
@@ -160,21 +161,59 @@ export const definitionsRouter = createTRPCRouter({
           ...getTableColumns(definitionsTable),
           vote: userId
             ? sql<"up" | "down" | null>`${votesTable.kind}`.as("vote")
-            : sql<"up" | "down" | null>`null`.as("vote"),
+            : sql<"up" | "down" | null>`null`.as("vote")
         })
         .from(definitionsTable)
         .where(and(eq(definitionsTable.termId, termId)))
-        .orderBy(desc(definitionsTable.score));
+        .orderBy(desc(definitionsTable.score))
 
       if (userId)
         definitionsQuery.leftJoin(
           votesTable,
           and(
             eq(votesTable.userId, userId),
-            eq(votesTable.definitionId, definitionsTable.id),
-          ),
-        );
+            eq(votesTable.definitionId, definitionsTable.id)
+          )
+        )
 
-      return await definitionsQuery;
+      return await definitionsQuery
     }),
-});
+  delete: adminProcedure
+    .input(z.number())
+    .mutation(async ({ input: definitionId }) => {
+      // start a tx so if something fails, everything will get restored
+      return await db.transaction(async (tx) => {
+        await tx
+          .delete(commentsTable)
+          .where(eq(commentsTable.definitionId, definitionId))
+
+        await tx
+          .delete(votesTable)
+          .where(eq(votesTable.definitionId, definitionId))
+
+        const [deletedDef] = await tx
+          .delete(definitionsTable)
+          .where(eq(definitionsTable.id, definitionId))
+          .returning()
+
+        // check if there exists any other definitions
+        const otherDef = await tx.query.definitionsTable.findFirst({
+          where: eq(definitionsTable.termId, deletedDef.termId)
+        })
+
+        // if there arent, delete the term as well so that a new
+        // AI def will be created when its redefined
+        if (!otherDef) {
+          await tx
+            .delete(chatsTable)
+            .where(eq(chatsTable.termId, deletedDef.termId))
+
+          await tx
+            .delete(termsTable)
+            .where(eq(termsTable.id, deletedDef.termId))
+        }
+
+        return deletedDef
+      })
+    })
+})
