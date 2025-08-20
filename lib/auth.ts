@@ -4,7 +4,6 @@ import { OAuthURL } from "./apis/google"
 import { db, usersTable } from "@yamz/db"
 import { eq } from "drizzle-orm"
 
-
 export const auth = async () => {
   const sesh = await getSession()
   if (!sesh.id) redirect(OAuthURL)
