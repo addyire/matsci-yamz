@@ -8,7 +8,9 @@ import {
   editsTable,
   chatsTable,
   usersTable,
-  commentsTable
+  commentsTable,
+  tagsTable,
+  tagsToDefinitions
 } from "@yamz/db"
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm"
 import { adminProcedure, authenticatedProcedure } from "../procedures"
@@ -190,6 +192,14 @@ export const definitionsRouter = createTRPCRouter({
         await tx
           .delete(votesTable)
           .where(eq(votesTable.definitionId, definitionId))
+
+        await tx
+          .delete(editsTable)
+          .where(eq(editsTable.definitionId, definitionId))
+
+        await tx
+          .delete(tagsToDefinitions)
+          .where(eq(tagsToDefinitions.definitionId, definitionId))
 
         const [deletedDef] = await tx
           .delete(definitionsTable)
