@@ -35,7 +35,7 @@ export type Term = typeof termsTable.$inferSelect
 export const termsTable = pgTable("terms", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   // authorId: integer().references(() => usersTable.id),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestamp({ mode: "string" }).defaultNow().notNull(),
   term: text().notNull().unique()
 })
 

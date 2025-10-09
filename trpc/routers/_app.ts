@@ -1,15 +1,15 @@
-import { baseProcedure, createTRPCRouter } from "../init";
-import { tagsRouter } from "./tags";
-import { userRouter } from "./user";
-import { definitionsRouter } from "./definitions";
-import { commentsRouter } from "./comments";
-import { adminRouter } from "./admin";
-import { termsRouter } from "./terms";
-import { z } from "zod";
-import { db, definitionsTable, termsTable, usersTable } from "@yamz/db";
-import { desc, eq, ilike, or } from "drizzle-orm";
-import { authenticatedProcedure } from "../procedures";
-import { votesRouter } from "./votes";
+import { baseProcedure, createTRPCRouter } from "../init"
+import { tagsRouter } from "./tags"
+import { userRouter } from "./user"
+import { definitionsRouter } from "./definitions"
+import { commentsRouter } from "./comments"
+import { adminRouter } from "./admin"
+import { termsRouter } from "./terms"
+import { z } from "zod"
+import { db, definitionsTable, termsTable, usersTable } from "@yamz/db"
+import { desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
+import { authenticatedProcedure } from "../procedures"
+import { votesRouter } from "./votes"
 
 export const appRouter = createTRPCRouter({
   tags: tagsRouter,
@@ -21,10 +21,10 @@ export const appRouter = createTRPCRouter({
   admin: adminRouter,
   me: authenticatedProcedure.query(async ({ ctx }) => {
     const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, ctx.userId),
-    });
+      where: eq(usersTable.id, ctx.userId)
+    })
 
-    return user;
+    return user
   }),
   logout: baseProcedure.mutation(async ({ ctx }) => {
     ctx.session.destroy()
@@ -32,25 +32,83 @@ export const appRouter = createTRPCRouter({
 
     return { ok: true }
   }),
-  search: baseProcedure.input(z.object({ query: z.string(), limit: z.number().default(10) }).optional()).query(async ({ input }) => {
-    const { query, limit } = input || { query: '', limit: 10 }
-
-    const results = await db
-      .select()
-      .from(termsTable)
-      .innerJoin(definitionsTable, eq(termsTable.id, definitionsTable.termId))
-      .where(
-        or(
-          ilike(termsTable.term, `%${query}%`),
-          ilike(definitionsTable.definition, `%${query}%`),
-        ),
+  search: {
+    terms: baseProcedure
+      .input(
+        z
+          .object({ query: z.string(), limit: z.number().default(10) })
+          .optional()
       )
-      .limit(limit)
-      .orderBy(desc(definitionsTable.createdAt));
+      .query(async ({ input }) => {
+        const { query, limit } = input || { query: "", limit: 10 }
 
-    return results;
-  }),
-});
+        const results = await db
+          .select({
+            ...getTableColumns(termsTable),
+            count: sql<number>`count(*)`.as("count")
+          })
+          .from(termsTable)
+          .rightJoin(
+            definitionsTable,
+            eq(termsTable.id, definitionsTable.termId)
+          )
+          .where(ilike(termsTable.term, `%${query}%`))
+          .limit(limit)
+          .groupBy(termsTable.id)
+
+        return results
+      }),
+    definitions: baseProcedure
+      .input(
+        z
+          .object({ query: z.string(), limit: z.number().default(10) })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        const { query, limit } = input || { query: "", limit: 10 }
+
+        const results = await db
+          .select()
+          .from(termsTable)
+          .innerJoin(
+            definitionsTable,
+            eq(termsTable.id, definitionsTable.termId)
+          )
+          .where(or(ilike(definitionsTable.definition, `%${query}%`)))
+          .limit(limit)
+          .orderBy(desc(definitionsTable.createdAt))
+
+        return results
+      }),
+    all: baseProcedure
+      .input(
+        z
+          .object({ query: z.string(), limit: z.number().default(10) })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        const { query, limit } = input || { query: "", limit: 10 }
+
+        const results = await db
+          .select()
+          .from(termsTable)
+          .innerJoin(
+            definitionsTable,
+            eq(termsTable.id, definitionsTable.termId)
+          )
+          .where(
+            or(
+              ilike(termsTable.term, `%${query}%`),
+              ilike(definitionsTable.definition, `%${query}%`)
+            )
+          )
+          .limit(limit)
+          .orderBy(desc(definitionsTable.createdAt))
+
+        return results
+      })
+  }
+})
 
 // export type definition of API
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeof appRouter

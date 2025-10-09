@@ -1,8 +1,8 @@
-import { SearchSection } from "./search-section";
-import { HydrateClient, trpc } from "@/trpc/server";
+import { SearchSection } from "./search-section"
+import { HydrateClient, trpc } from "@/trpc/server"
 
 export default async function Home() {
-  await trpc.search.prefetch({ query: '', limit: 4 })
+  await trpc.search.definitions.prefetch({ query: "", limit: 4 })
 
   return (
     <HydrateClient>
@@ -14,5 +14,5 @@ export default async function Home() {
         <SearchSection />
       </main>
     </HydrateClient>
-  );
+  )
 }
