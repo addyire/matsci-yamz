@@ -20,7 +20,7 @@ export const usersTable = pgTable("users", {
   email: varchar({ length: 254 }),
   isAi: boolean().notNull().default(false),
   isAdmin: boolean().default(false),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestamp({ mode: "string" }).defaultNow().notNull(),
   notifications: boolean().default(false)
 })
 
@@ -46,6 +46,7 @@ export const termsTableRelations = relations(termsTable, ({ one, many }) => ({
 
 // --- DEFINITIONS ---
 export type Definition = typeof definitionsTable.$inferSelect
+export type DefinitionWithAuthor = Definition & { author: User }
 export const definitionsTable = pgTable(
   "definitions",
   {
@@ -89,7 +90,7 @@ export const editsTable = pgTable("definitionEdits", {
   definitionId: integer()
     .references(() => definitionsTable.id)
     .notNull(),
-  prevDefinition: text(),
+  newDefinition: text(),
   definition: text().notNull(), // what the definition used to be
   editedAt: timestamp().defaultNow().notNull()
 })

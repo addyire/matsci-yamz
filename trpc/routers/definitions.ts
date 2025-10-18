@@ -107,7 +107,8 @@ export const definitionsRouter = createTRPCRouter({
 
           await db.insert(editsTable).values({
             definitionId: def.id,
-            definition: def.definition
+            definition: def.definition,
+            newDefinition: definition
           })
 
           return updatedDef
@@ -164,12 +165,14 @@ export const definitionsRouter = createTRPCRouter({
       const definitionsQuery = db
         .select({
           ...getTableColumns(definitionsTable),
+          isAi: usersTable.isAi,
           vote: userId
             ? sql<"up" | "down" | null>`${votesTable.kind}`.as("vote")
             : sql<"up" | "down" | null>`null`.as("vote")
         })
         .from(definitionsTable)
         .where(and(eq(definitionsTable.termId, termId)))
+        .innerJoin(usersTable, eq(definitionsTable.authorId, usersTable.id))
         .orderBy(desc(definitionsTable.score))
 
       if (userId)

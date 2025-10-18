@@ -55,8 +55,8 @@ const DefinitionsSearch = ({ query }: SearchProps) => {
   return (
     <section className="flex flex-col gap-2">
       {data?.map((result) => (
-        <Definition definition={result.definitions} key={result.definitions.id}>
-          <h1 className="text-2xl font-semibold">{result.terms.term}</h1>
+        <Definition definition={result} key={result.id}>
+          <h1 className="text-2xl font-semibold">{result.term}</h1>
         </Definition>
       ))}
     </section>

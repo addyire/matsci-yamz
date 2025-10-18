@@ -1,10 +1,15 @@
-import type { Definition as DefinitionType, Term as TermType } from "@yamz/db"
+import type {
+  Definition as DefinitionType,
+  DefinitionWithAuthor,
+  Term as TermType
+} from "@yamz/db"
 import Link from "next/link"
 import { Card } from "./ui/card"
 import { TermVotes } from "./term/votes"
 import { lightFormat } from "date-fns"
 import { ReactNode } from "react"
 import { ArrowRight } from "lucide-react"
+import { Badge } from "./ui/badge"
 
 export const Term = ({
   term
@@ -27,7 +32,7 @@ export const Definition = ({
   definition,
   children
 }: {
-  definition: DefinitionType & { vote?: "up" | "down" | null }
+  definition: DefinitionType & { vote?: "up" | "down" | null; isAi: boolean }
   children?: ReactNode
 }) => (
   <Link
@@ -54,6 +59,7 @@ export const Definition = ({
         </div>
       </section>
       <section>
+        {definition.isAi && <Badge>AI Generated</Badge>}
         <div>
           <span className="italic">Created: </span>
           {lightFormat(definition.createdAt, "yyyy-MM-dd")}

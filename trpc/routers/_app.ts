@@ -68,12 +68,17 @@ export const appRouter = createTRPCRouter({
         const { query, limit } = input || { query: "", limit: 10 }
 
         const results = await db
-          .select()
+          .select({
+            ...getTableColumns(definitionsTable),
+            isAi: usersTable.isAi,
+            term: termsTable.term
+          })
           .from(termsTable)
           .innerJoin(
             definitionsTable,
             eq(termsTable.id, definitionsTable.termId)
           )
+          .innerJoin(usersTable, eq(definitionsTable.authorId, usersTable.id))
           .where(or(ilike(definitionsTable.definition, `%${query}%`)))
           .limit(limit)
           .orderBy(desc(definitionsTable.createdAt))

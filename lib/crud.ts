@@ -1,60 +1,62 @@
-import {
-  db,
-  definitionsTable,
-  usersTable,
-} from "@yamz/db";
-import { and, eq } from "drizzle-orm";
-import { cache } from "react";
+import { db, definitionsTable, editsTable, usersTable } from "@yamz/db"
+import { and, eq } from "drizzle-orm"
+import { cache } from "react"
 
 export const GetUser = cache((userId: number) =>
   db.query.usersTable.findFirst({
-    where: eq(usersTable.id, userId),
-  }),
-);
+    where: eq(usersTable.id, userId)
+  })
+)
 
 export const GetAiUser = async () => {
   let aiUser = await db.query.usersTable.findFirst({
-    where: eq(usersTable.isAi, true),
-  });
+    where: eq(usersTable.isAi, true)
+  })
 
   if (!aiUser) {
-    console.log("No AI user found! Creating one now...");
+    console.log("No AI user found! Creating one now...")
 
     const [insertedUser] = await db
       .insert(usersTable)
       .values({
-        isAi: true,
+        isAi: true
       })
-      .returning();
+      .returning()
 
-    aiUser = insertedUser;
-  } else console.log(`Using AI user with id ${aiUser.id}`);
+    aiUser = insertedUser
+  } else console.log(`Using AI user with id ${aiUser.id}`)
 
-  return aiUser;
-};
+  return aiUser
+}
 
 export const UpsertAIDefinition = async (
   termId: number,
-  data: { definition: string; example: string },
+  data: { definition: string; example: string }
 ) => {
-  const aiUser = await GetAiUser();
+  const aiUser = await GetAiUser()
 
   const existingDef = await db.query.definitionsTable.findFirst({
     where: and(
       eq(definitionsTable.termId, termId),
-      eq(definitionsTable.authorId, aiUser.id),
-    ),
-  });
+      eq(definitionsTable.authorId, aiUser.id)
+    )
+  })
 
-  if (existingDef)
+  if (existingDef) {
     await db
       .update(definitionsTable)
       .set(data)
-      .where(eq(definitionsTable.id, existingDef.id));
-  else
+      .where(eq(definitionsTable.id, existingDef.id))
+
+    await db.insert(editsTable).values({
+      definitionId: existingDef.id,
+      definition: existingDef.definition,
+      newDefinition: data.definition
+    })
+  } else
     await db.insert(definitionsTable).values({
       termId,
       ...data,
-      authorId: aiUser.id,
-    });
-};
+      authorId: aiUser.id
+    })
+}

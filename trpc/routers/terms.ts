@@ -1,14 +1,60 @@
-import { db, termsTable } from "@yamz/db";
-import { baseProcedure, createTRPCRouter } from "../init";
-import { like } from "drizzle-orm";
-import { z } from "zod";
+import { chatsTable, db, definitionsTable, termsTable } from "@yamz/db"
+import { baseProcedure, createTRPCRouter } from "../init"
+import { desc, like } from "drizzle-orm"
+import { z } from "zod"
+import { GetAiUser } from "@/lib/crud"
 
 export const termsRouter = createTRPCRouter({
   list: baseProcedure.query(async () => {
     const terms = await db
       .select({ value: termsTable.term, id: termsTable.id })
-      .from(termsTable);
+      .from(termsTable)
 
-    return terms;
+    return terms
   }),
-});
+  tree: baseProcedure
+    .input(z.object({ termId: z.number() }))
+    .query(async ({ input: { termId } }) => {
+      const baseDefinitions = await db.query.definitionsTable.findMany({
+        where: (def, { eq }) => eq(def.termId, termId),
+        with: { author: true },
+        orderBy: desc(definitionsTable.createdAt)
+      })
+
+      const definitions = await Promise.all(
+        baseDefinitions.map(async (definition) => {
+          const [comments, edits] = await Promise.all([
+            db.query.commentsTable.findMany({
+              where: (c, { eq }) => eq(c.definitionId, definition.id)
+            }),
+            db.query.editsTable.findMany({
+              where: (e, { eq }) => eq(e.definitionId, definition.id)
+            })
+          ])
+
+          const history = [
+            ...comments.map((c) => ({
+              ...c,
+              createdAt: new Date(
+                new Date(c.createdAt).getTime() - 4 * 60 * 60 * 1000
+              ),
+              type: "comment" as const
+            })),
+            ...edits.map((e) => ({
+              ...e,
+              createdAt: e.editedAt,
+              type: "edit" as const
+            }))
+          ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
+          return {
+            ...definition,
+            isAi: definition.author?.isAi || false,
+            history
+          }
+        })
+      )
+
+      return definitions
+    })
+})
