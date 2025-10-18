@@ -1,8 +1,4 @@
-import type {
-  Definition as DefinitionType,
-  DefinitionWithAuthor,
-  Term as TermType
-} from "@yamz/db"
+import type { Definition as DefinitionType, Term as TermType } from "@yamz/db"
 import Link from "next/link"
 import { Card } from "./ui/card"
 import { TermVotes } from "./term/votes"

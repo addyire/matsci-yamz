@@ -5,11 +5,26 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { trpc } from "@/trpc/client"
 import { SearchIcon } from "lucide-react"
-import { useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function SearchPage() {
-  const [query, setQuery] = useState("")
-  const [mode, setMode] = useState<"definitions" | "terms">("terms")
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const [query, setQuery] = useState(searchParams.get("q") || "")
+  const [mode, setMode] = useState<"definitions" | "terms">(
+    (searchParams.get("mode") as "definitions" | "terms") || "terms"
+  )
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (query) params.set("q", query)
+    if (mode !== "terms") params.set("mode", mode)
+
+    const newUrl = params.toString() ? `/search?${params.toString()}` : "/search"
+    router.replace(newUrl, { scroll: false })
+  }, [query, mode, router])
 
   return (
     <main className="max-w-4xl w-full mx-auto p-4 space-y-4">

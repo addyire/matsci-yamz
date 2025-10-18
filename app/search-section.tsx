@@ -31,12 +31,12 @@ export const SearchSection = () => {
       </div>
       {data?.map((item) => (
         <Card
-          onClick={() => router.push(`/definition/${item.definitions.id}`)}
+          onClick={() => router.push(`/definition/${item.id}`)}
           className="!gap-0 !p-2 cursor-pointer"
-          key={item.definitions.id}
+          key={item.id}
         >
-          <h3 className="text-lg font-semibold">{item.terms.term}</h3>
-          <p>{item.definitions.definition}</p>
+          <h3 className="text-lg font-semibold">{item.term}</h3>
+          <p>{item.definition}</p>
         </Card>
       ))}
       {data?.length === 0 && (
