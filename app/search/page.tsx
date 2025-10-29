@@ -6,9 +6,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { trpc } from "@/trpc/client"
 import { SearchIcon } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 
-export default function SearchPage() {
+export default function SuspenseSearchPage() {
+  return (
+    <Suspense>
+      <SearchPage />
+    </Suspense>
+  )
+}
+
+const SearchPage = () => {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -22,7 +30,9 @@ export default function SearchPage() {
     if (query) params.set("q", query)
     if (mode !== "terms") params.set("mode", mode)
 
-    const newUrl = params.toString() ? `/search?${params.toString()}` : "/search"
+    const newUrl = params.toString()
+      ? `/search?${params.toString()}`
+      : "/search"
     router.replace(newUrl, { scroll: false })
   }, [query, mode, router])
 

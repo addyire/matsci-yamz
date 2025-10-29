@@ -1,8 +1,7 @@
-import { chatsTable, db, definitionsTable, termsTable } from "@yamz/db"
+import { db, definitionsTable, termsTable, votesTable } from "@yamz/db"
 import { baseProcedure, createTRPCRouter } from "../init"
-import { desc, like } from "drizzle-orm"
+import { desc, eq } from "drizzle-orm"
 import { z } from "zod"
-import { GetAiUser } from "@/lib/crud"
 
 export const termsRouter = createTRPCRouter({
   list: baseProcedure.query(async () => {
@@ -14,11 +13,14 @@ export const termsRouter = createTRPCRouter({
   }),
   tree: baseProcedure
     .input(z.object({ termId: z.number() }))
-    .query(async ({ input: { termId } }) => {
+    .query(async ({ input: { termId }, ctx: { userId } }) => {
       const baseDefinitions = await db.query.definitionsTable.findMany({
         where: (def, { eq }) => eq(def.termId, termId),
-        with: { author: true },
-        orderBy: desc(definitionsTable.createdAt)
+        with: {
+          author: true,
+          votes: userId ? { where: eq(votesTable.userId, userId) } : undefined
+        },
+        orderBy: desc(definitionsTable.score)
       })
 
       const definitions = await Promise.all(
@@ -50,6 +52,7 @@ export const termsRouter = createTRPCRouter({
           return {
             ...definition,
             isAi: definition.author?.isAi || false,
+            vote: definition.votes?.length ? definition.votes[0].kind : null,
             history
           }
         })

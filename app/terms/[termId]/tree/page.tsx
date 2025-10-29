@@ -16,7 +16,7 @@ export default async function TermTreePage(props: {
 
   if (!term) notFound()
 
-  const definitions = await trpc.terms.tree({ termId: term.id })
+  const tree = await trpc.terms.tree({ termId: term.id })
 
   return (
     <HydrateClient>
@@ -24,7 +24,7 @@ export default async function TermTreePage(props: {
         <section className="w-full">
           <h1 className="text-5xl font-bold mb-4">{term.term}</h1>
         </section>
-        {definitions.map((definition) => (
+        {tree.map((definition) => (
           <section className="flex items-stretch group" key={definition.id}>
             <div className="w-8 relative">
               <div className="absolute top-0 -bottom-4 left-1/2 -translate-x-1/2 bg-foreground h-full w-1 group-last:bottom-auto group-last:h-5" />
@@ -32,7 +32,7 @@ export default async function TermTreePage(props: {
             </div>
             <div className="flex-1 pb-4">
               <Definition definition={definition} />
-              {definition.history.map((history) => (
+              {definition.history.map((history, index) => (
                 <div className="flex items-stretch group" key={history.id}>
                   <div className="w-8 shrink-0 relative">
                     <div className="rounded-full z-10 bg-secondary border size-6 flex items-center justify-center absolute left-1/2 -translate-x-1/2 top-2">
@@ -41,7 +41,11 @@ export default async function TermTreePage(props: {
                         <MessageCircleIcon className="size-3" />
                       )}
                     </div>
-                    <div className="bg-secondary-foreground opacity-50 z-0 inset-y-0 h-full w-1 left-1/2 -translate-x-1/2 absolute" />
+                    {index == definition.history.length - 1 ? (
+                      <div className="bg-secondary-foreground opacity-50 z-0 h-6 w-1 left-1/2 -translate-x-1/2 absolute" />
+                    ) : (
+                      <div className="bg-secondary-foreground opacity-50 z-0 inset-y-0 h-full w-1 left-1/2 -translate-x-1/2 absolute" />
+                    )}
                   </div>
                   <div className="min-h-8 pt-3 flex-1">
                     {history.type == "comment" && (

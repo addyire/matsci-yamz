@@ -20,3 +20,17 @@ Running the MatSci YAMZ web server requires two other services to be running
 ## Upgrading
 
 After pulling a new version of MatSci YAMZ use the upgrade script in `scripts/upgrade.sh` to install dependencies, migrate the database, and build the new version of the app
+
+## Stack
+
+- **NextJS**: The web framework used for generating server and client side pages
+- **DrizzleORM**: ORM for interacting with the postgres database
+- **TRPc**: Used to easily make server side actions that can be used on the server and client
+
+## Folder Structure
+
+- `/app` - Each `page.tsx` refers to a page on the website
+- `/trpc` - CRUD operations
+- `/scripts` - Helper scripts for dumping the database and upgrading
+- `/drizzle` - Database schema and migrations
+- `/lib` - Helper functions for interacting with Google and Ollama API
